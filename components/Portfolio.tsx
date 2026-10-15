@@ -256,7 +256,7 @@ export default function Portfolio({ repos }: { repos: Repo[] }) {
           </div>
         </div>
 
-        <div className="rise d2" style={{ perspective: 1100 }} onMouseMove={tilt} onMouseLeave={untilt}>
+        <div className="rise d2 cardwrap" style={{ perspective: 1100 }} onMouseMove={tilt} onMouseLeave={untilt}>
           <div className="card" ref={cardRef}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 13, letterSpacing: ".12em", textTransform: "uppercase", color: "var(--mute)" }}>
               <span>Player card</span>

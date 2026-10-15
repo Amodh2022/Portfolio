@@ -95,7 +95,7 @@ h2.sec{animation:reveal linear both;animation-timeline:view();animation-range:en
 /* HERO */
 .hero{padding-top:88px;padding-bottom:112px;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(420px,100%),1fr));gap:56px;align-items:center}
 .hero h1{margin:0;font-size:clamp(40px,5.4vw,68px);line-height:.95;letter-spacing:-.01em;text-wrap:balance;text-shadow:1px 1px 0 var(--line),2px 2px 0 var(--line),3px 3px 0 var(--line),4px 4px 0 var(--line),5px 5px 0 var(--line),6px 6px 0 var(--line),7px 7px 0 var(--line),10px 14px 18px rgba(0,0,0,.55)}
-.card{background:var(--card);border:2px solid var(--line);padding:28px;display:flex;flex-direction:column;gap:24px;transition:transform .15s ease-out,box-shadow .15s ease-out;transform-style:preserve-3d;transform:rotateX(var(--tx,0deg)) rotateY(var(--ty,0deg));box-shadow:var(--sx,8px) var(--sy,8px) 0 var(--shadow)}
+.card{position:relative;background:var(--card);border:2px solid var(--line);padding:28px;display:flex;flex-direction:column;gap:24px;transition:transform .15s ease-out,box-shadow .15s ease-out;transform-style:preserve-3d;transform:rotateX(var(--tx,0deg)) rotateY(var(--ty,0deg));box-shadow:var(--sx,8px) var(--sy,8px) 0 var(--shadow)}
 .row{display:flex;justify-content:space-between;gap:16px}
 .row+.row{border-top:2px dotted var(--line);padding-top:8px}
 .coinbtn{position:absolute;width:56px;height:56px;padding:0;border:0;background:none;cursor:pointer;perspective:300px;z-index:4}
