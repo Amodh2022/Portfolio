@@ -25,11 +25,11 @@ export const QUESTS: Quest[] = [
   {
     id: "q1",
     num: "01",
-    title: "fitgrid",
-    blurb: "A Flutter data grid that measures its content instead of making you guess column widths.",
+    title: "fitgrid_table",
+    blurb: "A Flutter data grid that paints cells instead of building widgets: 1M rows render in about 42ms on the first frame.",
     problem: "Flutter data tables make you hard-code column widths and build a widget per cell, which gets slow on big data.",
     build: "Columns are sized from their content, and cells are painted by a custom RenderObject instead of being built as widgets.",
-    loot: "Benchmarked from 1,000 up to 100,000 rows, with a live demo and a write-up on choosing a Flutter data table.",
+    loot: "1M rows render in about 42ms on the first frame. Benchmarked from 1,000 rows up, with a live demo and a write-up on choosing a Flutter data table.",
     stack: ["Dart", "Flutter", "RenderObject", "Vercel"],
     repo: "https://github.com/Amodh2022/fitgrid",
     demo: "https://fitgrid-e734.vercel.app/demo/",
@@ -60,11 +60,11 @@ export const QUESTS: Quest[] = [
     id: "q4",
     num: "04",
     title: "flutter-bridge-mcp",
-    blurb: "An MCP server that lets an AI agent drive an Android device and read what a Flutter app is doing.",
+    blurb: "An MCP server that lets AI coding agents (Claude Code, Gemini) map a screen tap to the exact Dart file and line.",
     problem: "Coding agents can edit Flutter code but cannot see or touch the running app.",
-    build: "A Python MCP server that taps, types, captures screenshots and logs, and maps what is on screen back to the Dart source that built it.",
+    build: "A Python MCP server that taps, types, captures screenshots and logs, maps what is on screen back to the Dart source that built it, then hot-reloads and verifies the fix.",
     loot: "Closes the loop between an agent's edit and the real device.",
-    stack: ["Python", "MCP", "Flutter", "Android"],
+    stack: ["Python", "MCP", "Flutter", "Claude Code", "Gemini"],
     repo: "https://github.com/Amodh2022/flutter-bridge-mcp",
   },
 ];
@@ -74,15 +74,15 @@ export type Role = {
   title: string;
   period: string;
   summary: string;
-  highlights: string[];
-  stack: string[];
+  highlights?: string[];
+  stack?: string[];
 };
 
 export const EXPERIENCE: Role[] = [
   {
-    org: "Nuvo AI",
-    title: "Software Engineer",
-    period: "Nov 2025 - Present",
+    org: "Meril",
+    title: "SDE-1",
+    period: "Sep 2025 - Present",
     summary: "Building the Flutter hospital app used for outpatient and inpatient care, from the appointment queue to the operating theatre.",
     highlights: [
       "Shipped outpatient flows: appointment queue, pre-consultation and template-driven initial assessments.",
@@ -93,15 +93,27 @@ export const EXPERIENCE: Role[] = [
     ],
     stack: ["Flutter", "Dart", "BLoC / Cubit", "REST APIs", "Native BLE", "Kotlin"],
   },
+  {
+    org: "Miles Education",
+    title: "Flutter Developer",
+    period: "Mar 2025 - Aug 2025",
+    summary: "Flutter developer on production mobile apps for Android and iOS.",
+  },
+  {
+    org: "Agathsya Technologies Pvt Ltd",
+    title: "Associate Software Engineer",
+    period: "Feb 2024 - Feb 2025",
+    summary: "Started my career building Flutter apps, taking them from first commit to Play Store and App Store release.",
+  },
 ];
 
 export const SKILLS: { name: string; note: string }[] = [
-  { name: "Flutter", note: "Cross-platform apps, custom RenderObjects, hospital apps" },
-  { name: "Dart", note: "Packages like fitgrid and local_first_sync" },
-  { name: "BLoC / Cubit", note: "Per-feature state, no setState" },
-  { name: "Python", note: "flutter-bridge-mcp" },
-  { name: "TypeScript / Next.js", note: "This portfolio" },
-  { name: "Docker", note: "Sue Me production deploys" },
+  { name: "Flutter & Dart", note: "Android and iOS apps from first commit to store release" },
+  { name: "State management", note: "BLoC, Riverpod, Provider and GetX" },
+  { name: "Firebase & REST", note: "Production APIs, auth and real-time data" },
+  { name: "Offline-first", note: "Isolates, background work and local_first_sync" },
+  { name: "LLM & MCP", note: "AI tooling like flutter-bridge-mcp" },
+  { name: "Python & TypeScript", note: "MCP servers and this Next.js portfolio" },
 ];
 
 export type Repo = { name: string; description: string | null; language: string | null; url: string; stars: number };

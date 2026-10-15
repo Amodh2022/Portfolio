@@ -7,7 +7,7 @@ const pixel = Pixelify_Sans({ subsets: ["latin"], weight: ["500", "700"], variab
 
 export const metadata: Metadata = {
   title: "Amodh Nadiger · Software Engineer",
-  description: "Portfolio of Amodh Nadiger. Open quests, level up skills, unlock every badge.",
+  description: "Amodh Nadiger, Software Engineer with 3.5+ years of Flutter experience. Creator of fitgrid_table and flutter-bridge-mcp.",
 };
 
 // Applies the saved theme and accent before first paint so there is no flash.

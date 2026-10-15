@@ -273,7 +273,7 @@ export default function Portfolio({ repos }: { repos: Repo[] }) {
             <h1 className="pixel rise d1">Hi, I&apos;m <span className="glitch">{PROFILE.name}</span>.</h1>
           </div>
           <p className="rise d2" style={{ margin: 0, fontSize: 18, maxWidth: 520, color: "var(--ink2)", textWrap: "pretty" }}>
-            {PROFILE.role} building mobile and web apps, developer tools and AI-powered products. This page is a game: open quests, level up skills, and unlock every badge. Everything you touch earns XP.
+            {PROFILE.role} with 3.5+ years shipping Flutter apps to the Play Store and App Store, now building AI tooling for developers. This page is a game: open quests, level up skills, and unlock every badge. Everything you touch earns XP.
           </p>
           <div className="rise d3" style={{ display: "flex", flexWrap: "wrap", gap: 16 }}>
             <a className="cta" href="#quests">Press start</a>
@@ -316,7 +316,7 @@ export default function Portfolio({ repos }: { repos: Repo[] }) {
             <dl style={{ margin: 0, display: "grid", gap: 10, fontSize: 15 }}>
               <div className="row"><dt style={{ color: "var(--mute)" }}>Class</dt><dd style={{ margin: 0, textAlign: "right" }}>{PROFILE.role}</dd></div>
               <div className="row"><dt style={{ color: "var(--mute)" }}>Base</dt><dd style={{ margin: 0, textAlign: "right" }}>{PROFILE.city}</dd></div>
-              <div className="row"><dt style={{ color: "var(--mute)" }}>Status</dt><dd style={{ margin: 0, textAlign: "right", color: "var(--act)" }}>Open to new quests</dd></div>
+              <div className="row"><dt style={{ color: "var(--mute)" }}>Status</dt><dd style={{ margin: 0, textAlign: "right", color: "var(--act)" }}>Open to Flutter, SDE-2 &amp; Mobile + AI roles</dd></div>
             </dl>
           </div>
         </div>
@@ -409,12 +409,16 @@ export default function Portfolio({ repos }: { repos: Repo[] }) {
                   <span className="eyebrow">{r.period}</span>
                 </header>
                 <p style={{ margin: 0, color: "var(--ink2)", textWrap: "pretty" }}>{r.summary}</p>
-                <ul className="loot">
-                  {r.highlights.map((h) => <li key={h}>{h}</li>)}
-                </ul>
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
-                  {r.stack.map((t) => <span key={t} className="chipx">{t}</span>)}
-                </div>
+                {r.highlights && (
+                  <ul className="loot">
+                    {r.highlights.map((h) => <li key={h}>{h}</li>)}
+                  </ul>
+                )}
+                {r.stack && (
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
+                    {r.stack.map((t) => <span key={t} className="chipx">{t}</span>)}
+                  </div>
+                )}
               </article>
             </li>
           ))}
@@ -500,7 +504,7 @@ export default function Portfolio({ repos }: { repos: Repo[] }) {
           <p style={{ margin: 0, fontSize: 14, fontWeight: 600, letterSpacing: ".14em", textTransform: "uppercase" }}>Final stage</p>
           <h2 className="pixel">Want to team up?</h2>
           <p style={{ margin: 0, fontSize: 18, maxWidth: 620, textWrap: "pretty" }}>
-            I&apos;m looking for software engineering roles and projects worth building well. Send an invite and I&apos;ll get back to you.
+            I&apos;m open to Flutter Developer, Senior Mobile Engineer, SDE-2 and Mobile + AI roles in Bengaluru or remote. Send an invite and I&apos;ll get back to you.
           </p>
           {badgesDone === badges.length && <p className="open" style={{ margin: 0, fontWeight: 600 }}>Perfect run. You found every badge.</p>}
           <ContactForm email={PROFILE.email} />
