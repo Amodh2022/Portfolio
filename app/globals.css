@@ -173,3 +173,15 @@ h2.sec{animation:reveal linear both;animation-timeline:view();animation-range:en
 .loot li{position:relative;padding-left:22px;text-wrap:pretty}
 .loot li::before{content:"";position:absolute;left:0;top:.6em;width:8px;height:8px;background:var(--coral)}
 @media (max-width:720px){.stage{grid-template-columns:1fr;gap:12px}.node{width:48px;height:48px;font-size:20px}}
+
+/* rotating skill ring around the hero sprite */
+.orbital{--R:150px;position:relative;width:calc(var(--R)*2 + 90px);height:calc(var(--R)*2 + 90px);max-width:100%;display:grid;place-items:center}
+.orbital>.scene{grid-area:1/1}
+.skillring{position:absolute;left:50%;top:50%;width:calc(var(--R)*2);height:calc(var(--R)*2);margin:calc(var(--R)*-1) 0 0 calc(var(--R)*-1);border:2px dashed var(--line);border-radius:50%;animation:ringspin 40s linear infinite}
+@keyframes ringspin{to{transform:rotate(360deg)}}
+.orb-slot{position:absolute;left:50%;top:50%;width:0;height:0;transform:rotate(var(--a)) translateY(calc(var(--R)*-1))}
+.orb-chip{position:absolute;left:0;top:0;translate:-50% -50%;white-space:nowrap;padding:3px 10px;background:var(--card2);color:var(--ink);border:2px solid var(--line);font-size:13px;font-weight:600;line-height:1.4;animation:chipspin 40s linear infinite}
+.orb-chip.ai{background:var(--coral);color:#0F1020;border-color:var(--ink)}
+.orb-slot:nth-child(odd) .orb-chip:not(.ai){background:var(--ac);color:var(--on-ac);border-color:var(--ink)}
+@keyframes chipspin{from{transform:rotate(calc(var(--a) * -1))}to{transform:rotate(calc(var(--a) * -1 - 360deg))}}
+@media (max-width:720px){.orbital{--R:112px}.orb-chip{font-size:11px;padding:2px 7px}.scene{transform:scale(.8)}}

@@ -114,12 +114,36 @@ export const EXPERIENCE: Role[] = [
 ];
 
 export const SKILLS: { name: string; note: string }[] = [
-  { name: "Flutter & Dart", note: "Android and iOS apps from first commit to store release" },
+  { name: "Flutter & Dart", note: "Production apps from first commit to release" },
+  { name: "iOS & Android", note: "Shipped to the Play Store and App Store" },
+  { name: "Kotlin & native", note: "Native Android and BLE bridges for Flutter" },
   { name: "State management", note: "BLoC, Riverpod, Provider and GetX" },
   { name: "Firebase & REST", note: "Production APIs, auth and real-time data" },
   { name: "Offline-first", note: "Isolates, background work and local_first_sync" },
-  { name: "LLM & MCP", note: "AI tooling like flutter-bridge-mcp" },
+  { name: "AI & LLM", note: "Language-model features in real apps" },
+  { name: "MCP & agents", note: "Tooling for Claude Code and Gemini" },
   { name: "Python & TypeScript", note: "MCP servers and this Next.js portfolio" },
+];
+
+/** Labels carried by the rotating ring around the hero sprite. */
+export const ORBIT = ["Flutter", "Dart", "iOS", "Android", "Kotlin", "AI", "LLM", "MCP", "Firebase", "Python"];
+export const ORBIT_AI = new Set(["AI", "LLM", "MCP"]);
+
+export const AI_LAB: { title: string; text: string; link?: { label: string; href: string } }[] = [
+  {
+    title: "LLM integrations",
+    text: "Language-model features built into real apps. In Sue Me, an LLM plays Judge Byte: it reads both sides, hears the jury and hands down the verdict.",
+    link: { label: "See Sue Me", href: "https://github.com/Amodh2022/group_court_room" },
+  },
+  {
+    title: "MCP servers",
+    text: "flutter-bridge-mcp gives AI coding agents eyes and hands on a real device: tap, type, read logs, then map what's on screen to the exact Dart file and line.",
+    link: { label: "See flutter-bridge-mcp", href: "https://github.com/Amodh2022/flutter-bridge-mcp" },
+  },
+  {
+    title: "Agent-assisted building",
+    text: "Claude Code and Gemini are part of my daily workflow. The agent edits, hot-reloads and verifies the fix on the running app instead of guessing.",
+  },
 ];
 
 export type Repo = { name: string; description: string | null; language: string | null; url: string; stars: number };

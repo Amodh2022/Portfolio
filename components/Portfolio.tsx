@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useReducer, useRef, useState, type CSSProperties, type MouseEvent } from "react";
-import { EXPERIENCE, PROFILE, QUESTS, SKILLS, type Repo } from "@/lib/data";
+import { AI_LAB, EXPERIENCE, ORBIT, ORBIT_AI, PROFILE, QUESTS, SKILLS, type Repo } from "@/lib/data";
 import { play } from "@/lib/sound";
 import ContactForm from "./ContactForm";
 import { ACCENTS, useSettings } from "./useSettings";
@@ -21,7 +21,7 @@ const MOTES = [
   { left: "81%", top: 540, coral: false, delay: 2.4 },
   { left: "93%", top: 660, coral: true, delay: 5.2 },
 ];
-const MARQUEE_A = [PROFILE.role, "Open to work", "Build", "Ship", "Repeat"];
+const MARQUEE_A = [PROFILE.role, "Mobile + AI", "Open to work", "Build", "Ship", "Repeat"];
 const MARQUEE_B = [PROFILE.name, "Player 1", "Level up", PROFILE.city];
 
 const KONAMI = ["ArrowUp", "ArrowUp", "ArrowDown", "ArrowDown", "ArrowLeft", "ArrowRight", "ArrowLeft", "ArrowRight", "b", "a"];
@@ -292,7 +292,7 @@ export default function Portfolio({ repos }: { repos: Repo[] }) {
                 style={{ background: "none", border: 0, padding: 8, cursor: "pointer", minWidth: 44, minHeight: 44 }}>
                 <div className="bob">
                   <div key={s.hits} style={{ animation: s.hits ? "jolt .5s ease-out" : "none" }}>
-                    <div className="scene" aria-hidden>
+                    <div className="orbital"><SkillRing /><div className="scene" aria-hidden>
                       <div className="orbit">
                         <div className="ring" />
                         <span className="shard" style={{ left: 92, top: -8 }} />
@@ -308,7 +308,7 @@ export default function Portfolio({ repos }: { repos: Repo[] }) {
                         <div className="face f5">++</div>
                         <div className="face f6">[ ]</div>
                       </div>
-                    </div>
+                    </div></div>
                   </div>
                 </div>
               </button>
@@ -425,6 +425,24 @@ export default function Portfolio({ repos }: { repos: Repo[] }) {
         </ol>
       </section>
 
+      {/* AI LAB */}
+      <section id="ai" className="wrap" style={{ paddingTop: 0, paddingBottom: 96 }}>
+        <div className="sec-head">
+          <h2 className="pixel sec">AI lab</h2>
+          <p>Where mobile meets language models.</p>
+        </div>
+        <div className="rv grid3">
+          {AI_LAB.map((a) => (
+            <article key={a.title} className="quest tilt" style={{ padding: "24px 28px", display: "flex", flexDirection: "column", gap: 14 }}>
+              <span className="eyebrow">AI</span>
+              <h3 className="pixel" style={{ margin: 0, fontSize: 24, lineHeight: 1.15 }}>{a.title}</h3>
+              <p style={{ margin: 0, color: "var(--ink2)", textWrap: "pretty" }}>{a.text}</p>
+              {a.link && <a className="link" href={a.link.href} target="_blank" rel="noreferrer">{a.link.label} &rarr;</a>}
+            </article>
+          ))}
+        </div>
+      </section>
+
       {/* SKILLS */}
       <section style={{ position: "relative", background: "var(--bg2)", borderTop: "2px solid var(--line)", borderBottom: "2px solid var(--line)" }}>
         <div className="wrap s-top s-bot">
@@ -522,6 +540,18 @@ export default function Portfolio({ repos }: { repos: Repo[] }) {
           <button type="button" className="linkbtn" onClick={() => dispatch({ type: "reset" })}>Reset progress</button>
         </span>
       </footer>
+    </div>
+  );
+}
+
+function SkillRing() {
+  return (
+    <div className="skillring" aria-hidden>
+      {ORBIT.map((label, i) => (
+        <span key={label} className="orb-slot" style={{ "--a": `${(i * 360) / ORBIT.length}deg` } as CSSProperties}>
+          <span className={`orb-chip${ORBIT_AI.has(label) ? " ai" : ""}`}>{label}</span>
+        </span>
+      ))}
     </div>
   );
 }
