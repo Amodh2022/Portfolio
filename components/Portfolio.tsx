@@ -97,7 +97,6 @@ function loadSaved(): Saved | null {
 
 export default function Portfolio({ repos }: { repos: Repo[] }) {
   const [s, dispatch] = useReducer(reducer, initial);
-  const pageRef = useRef<HTMLDivElement>(null);
   const cardRef = useRef<HTMLDivElement>(null);
 
   const { settings, toggleSound, toggleTheme, setAccent, cycleAccent } = useSettings();
@@ -167,16 +166,6 @@ export default function Portfolio({ repos }: { repos: Repo[] }) {
   ];
   const badgesDone = badges.filter((b) => b.done).length;
 
-  // Pointer position goes straight to CSS variables so moving the mouse never re-renders React.
-  const aim = (e: MouseEvent<HTMLDivElement>) => {
-    const el = pageRef.current;
-    if (!el) return;
-    const r = el.getBoundingClientRect();
-    el.style.setProperty("--mx", `${Math.round(e.clientX - r.left)}px`);
-    el.style.setProperty("--my", `${Math.round(e.clientY - r.top)}px`);
-    el.style.setProperty("--pox", `${Math.round(50 + (e.clientX / window.innerWidth - 0.5) * 30)}%`);
-    el.style.setProperty("--poy", `${Math.round(50 + (e.clientY / window.innerHeight - 0.5) * 30)}%`);
-  };
   const tilt = (e: MouseEvent<HTMLDivElement>) => {
     const card = cardRef.current;
     if (!card) return;
@@ -198,21 +187,8 @@ export default function Portfolio({ repos }: { repos: Repo[] }) {
   };
 
   return (
-    <div ref={pageRef} className="page" onMouseMove={aim}>
+    <div className="page">
       <Boot />
-      <div
-        aria-hidden
-        className="spot"
-        style={{ position: "absolute", inset: 0, pointerEvents: "none", zIndex: 5, mixBlendMode: "screen",
-          background: "radial-gradient(circle 380px at var(--mx) var(--my), color-mix(in srgb, var(--ac) 14%, transparent), transparent 70%)" }}
-      />
-      <div
-        aria-hidden
-        className="cursor-d"
-        style={{ position: "absolute", left: 0, top: 0, width: 34, height: 34, margin: "-17px 0 0 -17px", border: "2px solid var(--ac)",
-          pointerEvents: "none", zIndex: 20, mixBlendMode: "difference", transition: "transform .12s ease-out",
-          transform: "translate(var(--mx), var(--my)) rotate(45deg)" }}
-      />
 
       <header className="hud">
         <div className="hud-in">
@@ -258,7 +234,6 @@ export default function Portfolio({ repos }: { repos: Repo[] }) {
         )}
       </header>
 
-      <Backdrop />
       {MOTES.map((m, i) => (
         <span key={i} className="mote" aria-hidden style={{ left: m.left, top: m.top, background: m.coral ? "var(--coral)" : "var(--ac)", animationDelay: `${m.delay}s` }} />
       ))}
@@ -288,7 +263,7 @@ export default function Portfolio({ repos }: { repos: Repo[] }) {
               <span style={{ color: "var(--coral)" }}>{badgesDone} / {badges.length} badges</span>
             </div>
             <div style={{ display: "flex", justifyContent: "center", padding: "12px 0 4px" }}>
-              <button type="button" onClick={() => { if (soundOn) play("click"); dispatch({ type: "poke" }); }} aria-label="Player sprite. Poke it for a surprise"
+              <button type="button" className="spritebtn" onClick={() => { if (soundOn) play("click"); dispatch({ type: "poke" }); }} aria-label="Player sprite. Poke it for a surprise"
                 style={{ background: "none", border: 0, padding: 8, cursor: "pointer", minWidth: 44, minHeight: 44 }}>
                 <div className="bob">
                   <div key={s.hits} style={{ animation: s.hits ? "jolt .5s ease-out" : "none" }}>
@@ -300,14 +275,14 @@ export default function Portfolio({ repos }: { repos: Repo[] }) {
                         <span className="shard" style={{ left: 92, top: 192 }} />
                         <span className="shard" style={{ left: 192, top: 92, background: "var(--ac)" }} />
                       </div>
-                      <div className="cube">
+                      <span className="hop-shadow" /><div className="hop"><div className="cube">
                         <div className="face f1"><span className="eyes"><i /><i /></span><span className="mouth" /></div>
                         <div className="face f2">&lt;/&gt;</div>
                         <div className="face f3">{"{ }"}</div>
                         <div className="face f4">01</div>
                         <div className="face f5">++</div>
                         <div className="face f6">[ ]</div>
-                      </div>
+                      </div></div>
                     </div></div>
                   </div>
                 </div>
@@ -566,25 +541,6 @@ function Boot() {
         <div style={{ height: 18, border: "2px solid var(--line)", marginTop: 14 }}><div className="bootbar" /></div>
       </div>
     </div>
-  );
-}
-
-function Backdrop() {
-  return (
-    <>
-      <div aria-hidden style={{ position: "absolute", left: 0, right: 0, top: 0, height: 900, overflow: "hidden", pointerEvents: "none" }}>
-        <div className="floor" />
-      </div>
-      <div aria-hidden className="tunnel" style={{ position: "absolute", left: 0, right: 0, top: 0, height: 900, overflow: "hidden", pointerEvents: "none", perspective: 900, perspectiveOrigin: "var(--pox) var(--poy)" }}>
-        <div style={{ position: "absolute", left: "50%", top: "50%", width: 0, height: 0, transformStyle: "preserve-3d", animation: "fly 3s linear infinite" }}>
-          {Array.from({ length: 9 }, (_, i) => (
-            <div key={i} style={{ position: "absolute", left: -380, top: -380, width: 760, height: 760, transform: `translateZ(${-i * 160}px)` }}>
-              <div style={{ width: "100%", height: "100%", border: "2px solid var(--ac)", opacity: Math.max(0.06, 0.38 - i * 0.04), animation: `tunspin ${26 + i * 4}s linear infinite ${i % 2 ? "reverse" : "normal"}` }} />
-            </div>
-          ))}
-        </div>
-      </div>
-    </>
   );
 }
 

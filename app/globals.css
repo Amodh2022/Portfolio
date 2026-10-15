@@ -1,4 +1,4 @@
-:root{--ac:#B6F24A;--act:var(--ac);--on-ac:#0F1020;--hud:rgba(15,16,32,.94);--coral:#FF8A78;--teal:#5FE3D0;--bg:#0F1020;--bg2:#0B0C19;--card:#181A30;--card2:#20233F;--line:#343862;--ink:#ECEBFA;--ink2:#C9CBEA;--mute:#A9ACD6;--shadow:#070813;--mx:-200px;--my:-200px;--pox:50%;--poy:50%}
+:root{--ac:#B6F24A;--act:var(--ac);--on-ac:#0F1020;--hud:rgba(15,16,32,.94);--coral:#FF8A78;--teal:#5FE3D0;--bg:#0F1020;--bg2:#0B0C19;--card:#181A30;--card2:#20233F;--line:#343862;--ink:#ECEBFA;--ink2:#C9CBEA;--mute:#A9ACD6;--shadow:#070813}
 :root[data-theme=light]{--bg:#F4F3FF;--bg2:#E8E7F7;--card:#FFFFFF;--card2:#ECEBFA;--line:#B9BBE0;--ink:#14152B;--ink2:#34365A;--mute:#55587F;--shadow:#8E91C0;--coral:#C8402C;--teal:#0E8F7E;--hud:rgba(244,243,255,.94);--act:color-mix(in srgb,var(--ac) 40%,#0F1020)}
 *{box-sizing:border-box}
 html{scroll-behavior:smooth}
@@ -22,8 +22,7 @@ a{color:inherit}
 @keyframes unlock{0%{transform:perspective(600px) rotateY(-180deg) scale(.8);box-shadow:0 0 0 0 var(--ac)}60%{transform:perspective(600px) rotateY(14deg) scale(1.06)}100%{transform:perspective(600px) rotateY(0);box-shadow:0 0 0 18px transparent}}
 @keyframes cursor{50%{opacity:0}}
 .cursor{animation:cursor 1s steps(1) infinite;color:var(--act)}
-@keyframes stripes{from{background-position:0 0}to{background-position:28px 0}}
-.xpfill{height:100%;background-color:var(--ac);background-image:repeating-linear-gradient(115deg,rgba(15,16,32,.22) 0 7px,transparent 7px 14px);background-size:28px 100%;animation:stripes .9s linear infinite;transition:width .7s cubic-bezier(.2,.8,.2,1)}
+.xpfill{height:100%;background-color:var(--ac);background-image:repeating-linear-gradient(115deg,rgba(15,16,32,.22) 0 7px,transparent 7px 14px);background-size:28px 100%;transition:width .7s cubic-bezier(.2,.8,.2,1)}
 @keyframes open{from{opacity:0;transform:perspective(900px) rotateX(-70deg)}to{opacity:1;transform:perspective(900px) rotateX(0)}}
 .open{transform-origin:50% 0;animation:open .55s cubic-bezier(.2,.8,.2,1) both}
 .press{transition:transform .3s cubic-bezier(.2,.8,.2,1),box-shadow .3s;cursor:pointer;transform-style:preserve-3d}
@@ -39,8 +38,6 @@ a{color:inherit}
 h2.sec{margin:0;font-size:clamp(34px,5vw,56px);line-height:1;text-shadow:1px 1px 0 var(--line),2px 2px 0 var(--line),3px 3px 0 var(--line),4px 4px 0 var(--line),5px 5px 0 var(--line)}
 @keyframes sway{from{transform:perspective(1000px) rotateY(-7deg)}to{transform:perspective(1000px) rotateY(7deg)}}
 .sway{transform-origin:0 50%;animation:sway 7s ease-in-out infinite alternate}
-@keyframes grid{from{background-position:0 0}to{background-position:0 64px}}
-.floor{position:absolute;left:-50%;width:200%;bottom:0;height:560px;transform:perspective(520px) rotateX(64deg);transform-origin:50% 100%;background-image:linear-gradient(var(--ac) 2px,transparent 2px),linear-gradient(90deg,var(--ac) 2px,transparent 2px);background-size:64px 64px;opacity:.32;animation:grid 1.6s linear infinite;-webkit-mask-image:linear-gradient(to top,#000 20%,transparent 95%);mask-image:linear-gradient(to top,#000 20%,transparent 95%)}
 .scene{position:relative;width:200px;height:200px;margin:0 auto;perspective:900px;transform-style:preserve-3d}
 @keyframes spin{from{transform:rotateX(-20deg) rotateY(0)}to{transform:rotateX(-20deg) rotateY(360deg)}}
 .cube{position:absolute;left:40px;top:40px;width:120px;height:120px;transform-style:preserve-3d;animation:spin 16s linear infinite}
@@ -76,7 +73,7 @@ h2.sec{margin:0;font-size:clamp(34px,5vw,56px);line-height:1;text-shadow:1px 1px
 .glitch:hover{animation:glitch .3s steps(2) 3}
 @keyframes lv{0%{opacity:0;transform:perspective(600px) translateY(-24px) rotateX(-90deg) scale(.6)}14%{opacity:1;transform:perspective(600px) rotateX(0) scale(1.12)}24%{transform:perspective(600px) scale(1)}80%{opacity:1}100%{opacity:0;transform:perspective(600px) translateY(24px) rotateX(70deg)}}
 @keyframes bst{0%{opacity:1;transform:rotate(var(--a)) translateX(30px) scale(1)}100%{opacity:0;transform:rotate(var(--a)) translateX(190px) scale(.2)}}
-@keyframes reveal{from{opacity:.15;transform:perspective(1000px) rotateX(24deg) translateY(90px) scale(.92)}to{opacity:1;transform:perspective(1000px) rotateX(0) translateY(0) scale(1)}}
+@keyframes reveal{from{opacity:0;transform:translateY(36px)}to{opacity:1;transform:none}}
 @supports (animation-timeline:view()){
 h2.sec{animation:reveal linear both;animation-timeline:view();animation-range:entry 0% entry 80%}
 .rv{animation:reveal linear both;animation-timeline:view();animation-range:entry 0% entry 70%}
@@ -146,8 +143,6 @@ h2.sec{animation:reveal linear both;animation-timeline:view();animation-range:en
 /* mobile: lighter 3D, tighter spacing */
 @media (max-width:720px){
   .boot{padding-top:120px}
-  .tunnel{display:none}
-  .floor{height:360px;opacity:.2;animation:none}
   .sway,.mote{animation:none}
   .mote{display:none}
   .wrap{padding-left:16px;padding-right:16px}
@@ -163,7 +158,6 @@ h2.sec{animation:reveal linear both;animation-timeline:view();animation-range:en
   .sec-head{margin-bottom:28px}
   .final{box-shadow:6px 6px 0 var(--ink)}
 }
-@media (hover:none),(pointer:coarse){.spot,.cursor-d{display:none}}
 
 /* experience timeline */
 .timeline{list-style:none;margin:0;padding:0;display:grid;gap:28px}
@@ -185,3 +179,41 @@ h2.sec{animation:reveal linear both;animation-timeline:view();animation-range:en
 .orb-slot:nth-child(odd) .orb-chip:not(.ai){background:var(--ac);color:var(--on-ac);border-color:var(--ink)}
 @keyframes chipspin{from{transform:rotate(calc(var(--a) * -1))}to{transform:rotate(calc(var(--a) * -1 - 360deg))}}
 @media (max-width:720px){.orbital{--R:112px}.orb-chip{font-size:11px;padding:2px 7px}.scene{transform:scale(.8)}}
+
+/* static, cheap background: faint pixel grid + soft accent glow, one fixed layer */
+.page::before{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
+  background:
+    radial-gradient(ellipse 70% 45% at 50% -5%,color-mix(in srgb,var(--ac) 14%,transparent),transparent 70%),
+    linear-gradient(var(--line) 1px,transparent 1px) 0 0/56px 56px,
+    linear-gradient(90deg,var(--line) 1px,transparent 1px) 0 0/56px 56px;
+  opacity:.55;
+  -webkit-mask-image:linear-gradient(to bottom,#000 0%,rgba(0,0,0,.35) 55%,transparent 100%);
+  mask-image:linear-gradient(to bottom,#000 0%,rgba(0,0,0,.35) 55%,transparent 100%)}
+
+/* cube: squash-and-stretch hop on hover */
+.hop{position:absolute;inset:0;transform-style:preserve-3d;transform-origin:50% 82%}
+.hop-shadow{position:absolute;left:50px;top:176px;width:100px;height:16px;border-radius:50%;background:rgba(0,0,0,.4);filter:blur(3px)}
+:root[data-theme=light] .hop-shadow{background:rgba(20,21,43,.28)}
+@keyframes hop{
+  0%{transform:translateY(0) scale(1,1)}
+  14%{transform:translateY(8px) scale(1.14,.8);animation-timing-function:cubic-bezier(.2,.7,.3,1)}
+  38%{transform:translateY(-58px) scale(.9,1.16);animation-timing-function:cubic-bezier(.4,0,.6,1)}
+  54%{transform:translateY(-66px) scale(.97,1.04);animation-timing-function:cubic-bezier(.5,0,.9,.4)}
+  74%{transform:translateY(0) scale(1.16,.82);animation-timing-function:cubic-bezier(.2,.7,.3,1)}
+  86%{transform:translateY(-12px) scale(.95,1.07);animation-timing-function:ease-in}
+  94%{transform:translateY(0) scale(1.04,.96)}
+  100%{transform:translateY(0) scale(1,1)}
+}
+@keyframes hopshadow{
+  0%,100%{transform:scale(1);opacity:1}
+  14%{transform:scale(1.12);opacity:1}
+  46%{transform:scale(.45);opacity:.45}
+  74%{transform:scale(1.18);opacity:1}
+  86%{transform:scale(.85);opacity:.8}
+}
+.spritebtn:focus-visible .hop,.spritebtn:active .hop{animation:hop .95s both}
+.spritebtn:focus-visible .hop-shadow,.spritebtn:active .hop-shadow{animation:hopshadow .95s both}
+@media (hover:hover){
+  .spritebtn:hover .hop{animation:hop .95s both}
+  .spritebtn:hover .hop-shadow{animation:hopshadow .95s both}
+}
