@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useReducer, useRef, useState, type CSSProperties, type MouseEvent } from "react";
-import { PROFILE, QUESTS, SKILLS, type Repo } from "@/lib/data";
+import { EXPERIENCE, PROFILE, QUESTS, SKILLS, type Repo } from "@/lib/data";
 import { play } from "@/lib/sound";
 import ContactForm from "./ContactForm";
 import { ACCENTS, useSettings } from "./useSettings";
@@ -388,6 +388,37 @@ export default function Portfolio({ repos }: { repos: Repo[] }) {
             );
           })}
         </div>
+      </section>
+
+      {/* EXPERIENCE */}
+      <section id="experience" className="wrap" style={{ paddingTop: 0, paddingBottom: 96 }}>
+        <div className="sec-head">
+          <h2 className="pixel sec">Campaign map</h2>
+          <p>Where I&apos;ve played so far.</p>
+        </div>
+        <ol className="rv timeline">
+          {EXPERIENCE.map((r, i) => (
+            <li key={r.org + r.period} className="stage">
+              <span className="node pixel" aria-hidden>{String(i + 1).padStart(2, "0")}</span>
+              <article className="quest tilt" style={{ padding: "24px 28px", display: "grid", gap: 18 }}>
+                <header style={{ display: "flex", flexWrap: "wrap", alignItems: "baseline", justifyContent: "space-between", gap: "4px 24px" }}>
+                  <div>
+                    <h3 className="pixel" style={{ margin: 0, fontSize: 28, lineHeight: 1.15 }}>{r.title}</h3>
+                    <p style={{ margin: 0, color: "var(--act)", fontWeight: 600 }}>{r.org}</p>
+                  </div>
+                  <span className="eyebrow">{r.period}</span>
+                </header>
+                <p style={{ margin: 0, color: "var(--ink2)", textWrap: "pretty" }}>{r.summary}</p>
+                <ul className="loot">
+                  {r.highlights.map((h) => <li key={h}>{h}</li>)}
+                </ul>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
+                  {r.stack.map((t) => <span key={t} className="chipx">{t}</span>)}
+                </div>
+              </article>
+            </li>
+          ))}
+        </ol>
       </section>
 
       {/* SKILLS */}

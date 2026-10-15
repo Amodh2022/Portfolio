@@ -164,3 +164,12 @@ h2.sec{animation:reveal linear both;animation-timeline:view();animation-range:en
   .final{box-shadow:6px 6px 0 var(--ink)}
 }
 @media (hover:none),(pointer:coarse){.spot,.cursor-d{display:none}}
+
+/* experience timeline */
+.timeline{list-style:none;margin:0;padding:0;display:grid;gap:28px}
+.stage{display:grid;grid-template-columns:64px 1fr;gap:20px;align-items:start}
+.node{display:grid;place-items:center;width:64px;height:64px;background:var(--ac);color:var(--on-ac);border:3px solid var(--ink);box-shadow:5px 5px 0 var(--shadow);font-size:26px}
+.loot{margin:0;padding:0;list-style:none;display:grid;gap:10px}
+.loot li{position:relative;padding-left:22px;text-wrap:pretty}
+.loot li::before{content:"";position:absolute;left:0;top:.6em;width:8px;height:8px;background:var(--coral)}
+@media (max-width:720px){.stage{grid-template-columns:1fr;gap:12px}.node{width:48px;height:48px;font-size:20px}}

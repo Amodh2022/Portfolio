@@ -69,6 +69,32 @@ export const QUESTS: Quest[] = [
   },
 ];
 
+export type Role = {
+  org: string;
+  title: string;
+  period: string;
+  summary: string;
+  highlights: string[];
+  stack: string[];
+};
+
+export const EXPERIENCE: Role[] = [
+  {
+    org: "Nuvo AI",
+    title: "Software Engineer",
+    period: "Nov 2025 - Present",
+    summary: "Building the Flutter hospital app used for outpatient and inpatient care, from the appointment queue to the operating theatre.",
+    highlights: [
+      "Shipped outpatient flows: appointment queue, pre-consultation and template-driven initial assessments.",
+      "Built inpatient modules: new admissions, ward and bed board, patient journey, doctors' and nurses' notes, and the OT module.",
+      "Integrated a Bluetooth vitals monitor (HC03) with native BLE so vitals flow straight into the patient record.",
+      "Added voice dictation for clinical notes, one engine reused across many form fields.",
+      "Introduced a light/dark theming system and moved the codebase from setState to Cubit-based state management.",
+    ],
+    stack: ["Flutter", "Dart", "BLoC / Cubit", "REST APIs", "Native BLE", "Kotlin"],
+  },
+];
+
 export const SKILLS: { name: string; note: string }[] = [
   { name: "Flutter", note: "Cross-platform apps, custom RenderObjects, hospital apps" },
   { name: "Dart", note: "Packages like fitgrid and local_first_sync" },
