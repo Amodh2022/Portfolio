@@ -1,4 +1,4 @@
-export type Sfx = "xp" | "level" | "secret" | "click";
+export type Sfx = "xp" | "level" | "secret" | "click" | "hit" | "win" | "lose" | "step";
 
 let ctx: AudioContext | null = null;
 
@@ -43,6 +43,19 @@ export function play(kind: Sfx, amount = 0) {
     case "level":
       [523, 659, 784, 1047].forEach((f, i) => tone(c, f, i * 0.09, 0.14));
       tone(c, 1047, 0.4, 0.4, "triangle", 0.05);
+      break;
+    case "hit":
+      tone(c, 180 + Math.min(amount, 10) * 40, 0, 0.06, "square", 0.05);
+      tone(c, 90, 0.02, 0.08, "sawtooth", 0.03);
+      break;
+    case "step":
+      tone(c, 260 + Math.random() * 40, 0, 0.05, "triangle", 0.03);
+      break;
+    case "win":
+      [523, 659, 784, 1047, 784, 1047, 1319].forEach((f, i) => tone(c, f, i * 0.1, 0.16));
+      break;
+    case "lose":
+      [392, 330, 262, 196].forEach((f, i) => tone(c, f, i * 0.14, 0.2, "sawtooth", 0.035));
       break;
     case "secret":
       [392, 523, 659, 784, 988, 1175, 1319, 1568].forEach((f, i) => tone(c, f, i * 0.06, 0.1, "square", 0.035));

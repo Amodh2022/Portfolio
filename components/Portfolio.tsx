@@ -1,10 +1,21 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useEffect, useReducer, useRef, useState, type CSSProperties, type MouseEvent } from "react";
 import { AI_LAB, EXPERIENCE, ORBIT, ORBIT_AI, PROFILE, QUESTS, SKILLS, type Repo } from "@/lib/data";
+import { emitBurst, lastPointer } from "@/lib/fx";
 import { play } from "@/lib/sound";
 import ContactForm from "./ContactForm";
+import { useGfx } from "./three/useGfx";
 import { ACCENTS, useSettings } from "./useSettings";
+
+const PlayerSprite = dynamic(() => import("./three/PlayerSprite"), { ssr: false, loading: () => <div className="stage3d" aria-hidden /> });
+const ParticleLayer = dynamic(() => import("./three/ParticleLayer"), { ssr: false });
+
+function burstColors() {
+  const cs = getComputedStyle(document.documentElement);
+  return [cs.getPropertyValue("--ac").trim() || "#B6F24A", cs.getPropertyValue("--coral").trim() || "#FF8A78", "#ffffff"];
+}
 
 const MAX_XP = 200;
 const TITLES = ["Rookie", "Apprentice", "Journeyman", "Specialist", "Veteran", "Legend"];
@@ -101,6 +112,11 @@ export default function Portfolio({ repos }: { repos: Repo[] }) {
 
   const { settings, toggleSound, toggleTheme, setAccent, cycleAccent } = useSettings();
   const soundOn = settings.sound;
+  const gfx = useGfx();
+  const poke = () => {
+    if (soundOn) play("click");
+    dispatch({ type: "poke" });
+  };
   const [saveReady, setSaveReady] = useState(false);
   const konami = useRef(0);
   const seen = useRef({ gain: 0, lvl: 0, secret: false });
@@ -127,6 +143,15 @@ export default function Portfolio({ repos }: { repos: Repo[] }) {
     const l = s.lvlN !== seen.current.lvl;
     const sec = s.secret && !seen.current.secret;
     seen.current = { gain: s.gainN, lvl: s.lvlN, secret: s.secret };
+    if (g || l || sec) {
+      const colors = burstColors();
+      if (g && s.gainN > 0) {
+        const pt = lastPointer();
+        emitBurst({ x: pt.x, y: pt.y, count: s.gain >= 30 ? 28 : 12, colors });
+      }
+      if (l && s.lvlN > 0) emitBurst({ x: window.innerWidth / 2, y: 90, count: 70, colors, power: 1.2 });
+      if (sec) emitBurst({ x: window.innerWidth / 2, y: window.innerHeight / 2, count: 90, colors, power: 1.4 });
+    }
     if (!soundOn) return;
     if (sec) play("secret");
     else if (l && s.lvlN > 0) play("level");
@@ -189,6 +214,7 @@ export default function Portfolio({ repos }: { repos: Repo[] }) {
   return (
     <div className="page">
       <Boot />
+      {gfx.enabled && <ParticleLayer max={gfx.low ? 120 : 320} />}
 
       <header className="hud">
         <div className="hud-in">
@@ -263,30 +289,14 @@ export default function Portfolio({ repos }: { repos: Repo[] }) {
               <span style={{ color: "var(--coral)" }}>{badgesDone} / {badges.length} badges</span>
             </div>
             <div style={{ display: "flex", justifyContent: "center", padding: "12px 0 4px" }}>
-              <button type="button" className="spritebtn" onClick={() => { if (soundOn) play("click"); dispatch({ type: "poke" }); }} aria-label="Player sprite. Poke it for a surprise"
-                style={{ background: "none", border: 0, padding: 8, cursor: "pointer", minWidth: 44, minHeight: 44 }}>
-                <div className="bob">
-                  <div key={s.hits} style={{ animation: s.hits ? "jolt .5s ease-out" : "none" }}>
-                    <div className="orbital"><SkillRing /><div className="scene" aria-hidden>
-                      <div className="orbit">
-                        <div className="ring" />
-                        <span className="shard" style={{ left: 92, top: -8 }} />
-                        <span className="shard" style={{ left: -8, top: 92, background: "var(--ac)" }} />
-                        <span className="shard" style={{ left: 92, top: 192 }} />
-                        <span className="shard" style={{ left: 192, top: 92, background: "var(--ac)" }} />
-                      </div>
-                      <span className="hop-shadow" /><div className="hop"><div className="cube">
-                        <div className="face f1"><span className="eyes"><i /><i /></span><span className="mouth" /></div>
-                        <div className="face f2">&lt;/&gt;</div>
-                        <div className="face f3">{"{ }"}</div>
-                        <div className="face f4">01</div>
-                        <div className="face f5">++</div>
-                        <div className="face f6">[ ]</div>
-                      </div></div>
-                    </div></div>
-                  </div>
-                </div>
-              </button>
+              {gfx.enabled ? (
+                <>
+                  <PlayerSprite low={gfx.low} onPoke={poke} />
+                  <button type="button" className="sr-only" onClick={poke}>Poke the player sprite for a surprise</button>
+                </>
+              ) : (
+                <CssSprite hits={s.hits} onPoke={poke} />
+              )}
             </div>
             <dl style={{ margin: 0, display: "grid", gap: 10, fontSize: 15 }}>
               <div className="row"><dt style={{ color: "var(--mute)" }}>Class</dt><dd style={{ margin: 0, textAlign: "right" }}>{PROFILE.role}</dd></div>
@@ -516,6 +526,35 @@ export default function Portfolio({ repos }: { repos: Repo[] }) {
         </span>
       </footer>
     </div>
+  );
+}
+
+function CssSprite({ hits, onPoke }: { hits: number; onPoke: () => void }) {
+  return (
+    <button type="button" className="spritebtn" onClick={onPoke} aria-label="Player sprite. Poke it for a surprise"
+      style={{ background: "none", border: 0, padding: 8, cursor: "pointer", minWidth: 44, minHeight: 44 }}>
+      <div className="bob">
+        <div key={hits} style={{ animation: hits ? "jolt .5s ease-out" : "none" }}>
+          <div className="orbital"><SkillRing /><div className="scene" aria-hidden>
+            <div className="orbit">
+              <div className="ring" />
+              <span className="shard" style={{ left: 92, top: -8 }} />
+              <span className="shard" style={{ left: -8, top: 92, background: "var(--ac)" }} />
+              <span className="shard" style={{ left: 92, top: 192 }} />
+              <span className="shard" style={{ left: 192, top: 92, background: "var(--ac)" }} />
+            </div>
+            <span className="hop-shadow" /><div className="hop"><div className="cube">
+              <div className="face f1"><span className="eyes"><i /><i /></span><span className="mouth" /></div>
+              <div className="face f2">&lt;/&gt;</div>
+              <div className="face f3">{"{ }"}</div>
+              <div className="face f4">01</div>
+              <div className="face f5">++</div>
+              <div className="face f6">[ ]</div>
+            </div></div>
+          </div></div>
+        </div>
+      </div>
+    </button>
   );
 }
 
