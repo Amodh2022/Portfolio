@@ -1,7 +1,10 @@
 "use client";
 
-import { useReducer, useRef, type CSSProperties, type MouseEvent } from "react";
+import { useEffect, useReducer, useRef, useState, type CSSProperties, type MouseEvent } from "react";
 import { PROFILE, QUESTS, SKILLS, type Repo } from "@/lib/data";
+import { play } from "@/lib/sound";
+import ContactForm from "./ContactForm";
+import { ACCENTS, useSettings } from "./useSettings";
 
 const MAX_XP = 200;
 const TITLES = ["Rookie", "Apprentice", "Journeyman", "Specialist", "Veteran", "Legend"];
@@ -21,19 +24,26 @@ const MOTES = [
 const MARQUEE_A = [PROFILE.role, "Open to work", "Build", "Ship", "Repeat"];
 const MARQUEE_B = [PROFILE.name, "Player 1", "Level up", PROFILE.city];
 
+const KONAMI = ["ArrowUp", "ArrowUp", "ArrowDown", "ArrowDown", "ArrowLeft", "ArrowRight", "ArrowLeft", "ArrowRight", "b", "a"];
+const SAVE_KEY = "pf-progress-v1";
+
 const levelOf = (xp: number) => Math.min(6, Math.floor(xp / 40) + 1);
 
 type State = {
   xp: number; cleared: Record<string, true>; active: string | null; skills: Record<string, number>;
-  hits: number; coins: Record<string, true>; gain: number; gainN: number; lvlN: number; lvlTo: number;
+  hits: number; coins: Record<string, true>; secret: boolean; gain: number; gainN: number; lvlN: number; lvlTo: number;
 };
+type Saved = Pick<State, "xp" | "cleared" | "skills" | "hits" | "coins" | "secret">;
 type Action =
   | { type: "quest"; id: string }
   | { type: "skill"; id: string }
   | { type: "coin"; id: string }
-  | { type: "poke" };
+  | { type: "poke" }
+  | { type: "secret" }
+  | { type: "load"; data: Saved }
+  | { type: "reset" };
 
-const initial: State = { xp: 0, cleared: {}, active: null, skills: {}, hits: 0, coins: {}, gain: 0, gainN: 0, lvlN: 0, lvlTo: 1 };
+const initial: State = { xp: 0, cleared: {}, active: null, skills: {}, hits: 0, coins: {}, secret: false, gain: 0, gainN: 0, lvlN: 0, lvlTo: 1 };
 
 function award(s: State, n: number): State {
   const xp = Math.min(MAX_XP, s.xp + n);
@@ -54,6 +64,12 @@ function reducer(s: State, a: Action): State {
     }
     case "coin":
       return s.coins[a.id] ? s : award({ ...s, coins: { ...s.coins, [a.id]: true } }, 5);
+    case "secret":
+      return s.secret ? s : award({ ...s, secret: true }, 20);
+    case "load":
+      return { ...initial, ...a.data };
+    case "reset":
+      return initial;
     case "poke": {
       const hits = s.hits + 1;
       return hits === 5 ? award({ ...s, hits }, 5) : { ...s, hits };
@@ -61,10 +77,80 @@ function reducer(s: State, a: Action): State {
   }
 }
 
+function loadSaved(): Saved | null {
+  try {
+    const raw = JSON.parse(localStorage.getItem(SAVE_KEY) ?? "null") as Partial<Saved> | null;
+    if (!raw || typeof raw.xp !== "number") return null;
+    const flags = (o: unknown) => (o && typeof o === "object" ? (o as Record<string, true>) : {});
+    return {
+      xp: Math.max(0, Math.min(MAX_XP, Math.round(raw.xp))),
+      cleared: flags(raw.cleared),
+      skills: Object.fromEntries(Object.entries(raw.skills ?? {}).map(([k, v]) => [k, Math.max(0, Math.min(3, Number(v) || 0))])),
+      hits: Math.max(0, Number(raw.hits) || 0),
+      coins: flags(raw.coins),
+      secret: raw.secret === true,
+    };
+  } catch {
+    return null;
+  }
+}
+
 export default function Portfolio({ repos }: { repos: Repo[] }) {
   const [s, dispatch] = useReducer(reducer, initial);
   const pageRef = useRef<HTMLDivElement>(null);
   const cardRef = useRef<HTMLDivElement>(null);
+
+  const { settings, toggleSound, toggleTheme, setAccent, cycleAccent } = useSettings();
+  const soundOn = settings.sound;
+  const [saveReady, setSaveReady] = useState(false);
+  const konami = useRef(0);
+  const seen = useRef({ gain: 0, lvl: 0, secret: false });
+
+  // restore saved progress once, after hydration
+  useEffect(() => {
+    const saved = loadSaved();
+    if (saved) dispatch({ type: "load", data: saved });
+    setSaveReady(true);
+  }, []);
+  useEffect(() => {
+    if (!saveReady) return;
+    const { xp, cleared, skills, hits, coins, secret } = s;
+    try {
+      localStorage.setItem(SAVE_KEY, JSON.stringify({ xp, cleared, skills, hits, coins, secret }));
+    } catch {
+      /* storage blocked: progress just won't persist */
+    }
+  }, [s, saveReady]);
+
+  // sound effects for XP, level-ups and the secret
+  useEffect(() => {
+    const g = s.gainN !== seen.current.gain;
+    const l = s.lvlN !== seen.current.lvl;
+    const sec = s.secret && !seen.current.secret;
+    seen.current = { gain: s.gainN, lvl: s.lvlN, secret: s.secret };
+    if (!soundOn) return;
+    if (sec) play("secret");
+    else if (l && s.lvlN > 0) play("level");
+    else if (g && s.gainN > 0) play("xp", s.gain);
+  }, [s.gainN, s.lvlN, s.gain, s.secret, soundOn]);
+
+  // konami code + single-key shortcuts (M sound, T theme, A accent)
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      if ((e.target as HTMLElement | null)?.closest("input,textarea,select,[contenteditable]")) return;
+      const k = e.key.length === 1 ? e.key.toLowerCase() : e.key;
+      konami.current = k === KONAMI[konami.current] ? konami.current + 1 : k === KONAMI[0] ? 1 : 0;
+      if (konami.current === KONAMI.length) {
+        konami.current = 0;
+        dispatch({ type: "secret" });
+      } else if (k === "m") toggleSound();
+      else if (k === "t") toggleTheme();
+      else if (k === "a") cycleAccent();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [toggleSound, toggleTheme, cycleAccent]);
 
   const lvl = levelOf(s.xp);
   const skillLv = SKILLS.map((_, i) => s.skills["s" + i] ?? 0);
@@ -77,6 +163,7 @@ export default function Portfolio({ repos }: { repos: Repo[] }) {
     { name: "Bug Squasher", desc: `Poke the robot five times (${Math.min(s.hits, 5)}/5).`, done: s.hits >= 5 },
     { name: "Coin Collector", desc: "Grab all three coins floating in the hero.", done: Object.keys(s.coins).length >= 3 },
     { name: "Legend", desc: "Reach 200 XP and level 6.", done: s.xp >= MAX_XP },
+    { name: "Konami Code", desc: "Up, up, down, down, left, right, left, right, B, A.", hint: "Some codes are older than the web.", done: s.secret },
   ];
   const badgesDone = badges.filter((b) => b.done).length;
 
@@ -115,11 +202,13 @@ export default function Portfolio({ repos }: { repos: Repo[] }) {
       <Boot />
       <div
         aria-hidden
+        className="spot"
         style={{ position: "absolute", inset: 0, pointerEvents: "none", zIndex: 5, mixBlendMode: "screen",
           background: "radial-gradient(circle 380px at var(--mx) var(--my), color-mix(in srgb, var(--ac) 14%, transparent), transparent 70%)" }}
       />
       <div
         aria-hidden
+        className="cursor-d"
         style={{ position: "absolute", left: 0, top: 0, width: 34, height: 34, margin: "-17px 0 0 -17px", border: "2px solid var(--ac)",
           pointerEvents: "none", zIndex: 20, mixBlendMode: "difference", transition: "transform .12s ease-out",
           transform: "translate(var(--mx), var(--my)) rotate(45deg)" }}
@@ -139,6 +228,19 @@ export default function Portfolio({ repos }: { repos: Repo[] }) {
           </div>
           <div style={{ minWidth: 84, height: 28, display: "flex", alignItems: "center", justifyContent: "flex-end" }}>
             {s.gainN > 0 && <span key={s.gainN} className="gain">+{s.gain} XP</span>}
+          </div>
+          <div className="tools" role="group" aria-label="Display settings">
+            <button type="button" className="tool" aria-pressed={soundOn} aria-label="Sound effects" title="Sound (M)"
+              onClick={() => { if (!soundOn) play("click"); toggleSound(); }}>
+              <svg viewBox="0 0 24 24" aria-hidden><path d="M3 9h4l5-4v14l-5-4H3z" />{soundOn ? <path d="M16 9a4 4 0 0 1 0 6M19 6a8 8 0 0 1 0 12" /> : <path d="M16 9l5 6M21 9l-5 6" />}</svg>
+            </button>
+            <button type="button" className="tool" aria-label={`Switch to ${settings.theme === "dark" ? "light" : "dark"} theme`} title="Theme (T)" onClick={toggleTheme}>
+              <svg viewBox="0 0 24 24" aria-hidden>{settings.theme === "dark" ? <path d="M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5z" /> : <path d="M12 7a5 5 0 1 0 0 10 5 5 0 0 0 0-10zM12 1v3M12 20v3M1 12h3M20 12h3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1" />}</svg>
+            </button>
+            {ACCENTS.map((a) => (
+              <button key={a.id} type="button" className="swatch" style={{ "--sw": a.hex } as CSSProperties}
+                aria-label={`${a.label} accent`} aria-pressed={settings.accent === a.hex} title="Accent (A)" onClick={() => setAccent(a.hex)} />
+            ))}
           </div>
         </div>
         {s.lvlN > 0 && (
@@ -186,7 +288,7 @@ export default function Portfolio({ repos }: { repos: Repo[] }) {
               <span style={{ color: "var(--coral)" }}>{badgesDone} / {badges.length} badges</span>
             </div>
             <div style={{ display: "flex", justifyContent: "center", padding: "12px 0 4px" }}>
-              <button type="button" onClick={() => dispatch({ type: "poke" })} aria-label="Player sprite. Poke it for a surprise"
+              <button type="button" onClick={() => { if (soundOn) play("click"); dispatch({ type: "poke" }); }} aria-label="Player sprite. Poke it for a surprise"
                 style={{ background: "none", border: 0, padding: 8, cursor: "pointer", minWidth: 44, minHeight: 44 }}>
                 <div className="bob">
                   <div key={s.hits} style={{ animation: s.hits ? "jolt .5s ease-out" : "none" }}>
@@ -214,7 +316,7 @@ export default function Portfolio({ repos }: { repos: Repo[] }) {
             <dl style={{ margin: 0, display: "grid", gap: 10, fontSize: 15 }}>
               <div className="row"><dt style={{ color: "var(--mute)" }}>Class</dt><dd style={{ margin: 0, textAlign: "right" }}>{PROFILE.role}</dd></div>
               <div className="row"><dt style={{ color: "var(--mute)" }}>Base</dt><dd style={{ margin: 0, textAlign: "right" }}>{PROFILE.city}</dd></div>
-              <div className="row"><dt style={{ color: "var(--mute)" }}>Status</dt><dd style={{ margin: 0, textAlign: "right", color: "var(--ac)" }}>Open to new quests</dd></div>
+              <div className="row"><dt style={{ color: "var(--mute)" }}>Status</dt><dd style={{ margin: 0, textAlign: "right", color: "var(--act)" }}>Open to new quests</dd></div>
             </dl>
           </div>
         </div>
@@ -229,7 +331,7 @@ export default function Portfolio({ repos }: { repos: Repo[] }) {
 
       {/* MARQUEE */}
       <div aria-hidden style={{ position: "relative", padding: "56px 0 88px", overflow: "hidden" }}>
-        <div style={{ transform: "rotate(-3deg) scale(1.08)", background: "var(--ac)", color: "var(--bg)", borderTop: "2px solid var(--ink)", borderBottom: "2px solid var(--ink)", padding: "12px 0", marginBottom: 28 }}>
+        <div style={{ transform: "rotate(-3deg) scale(1.08)", background: "var(--ac)", color: "var(--on-ac)", borderTop: "2px solid var(--ink)", borderBottom: "2px solid var(--ink)", padding: "12px 0", marginBottom: 28 }}>
           <Marquee words={MARQUEE_A} />
         </div>
         <div style={{ transform: "rotate(2deg) scale(1.08)", background: "var(--bg2)", borderTop: "2px solid var(--line)", borderBottom: "2px solid var(--line)", padding: "10px 0" }}>
@@ -238,7 +340,7 @@ export default function Portfolio({ repos }: { repos: Repo[] }) {
       </div>
 
       {/* QUESTS */}
-      <section id="quests" className="wrap" style={{ paddingTop: 56, paddingBottom: 96 }}>
+      <section id="quests" className="wrap s-bot" style={{ paddingTop: 56 }}>
         <div className="sec-head">
           <h2 className="pixel sec">Quest log</h2>
           <p>Open a quest to read the story. First clear: +30 XP.</p>
@@ -256,8 +358,8 @@ export default function Portfolio({ repos }: { repos: Repo[] }) {
                     <span style={{ fontSize: 15, color: "var(--ink2)", textWrap: "pretty" }}>{q.blurb}</span>
                   </span>
                   <span style={{ display: "flex", alignItems: "center", gap: 12, fontSize: 13, fontWeight: 600, letterSpacing: ".08em", textTransform: "uppercase" }}>
-                    <span style={{ padding: "4px 10px", background: done ? "var(--ac)" : "var(--card2)", color: done ? "var(--bg)" : "var(--ink)" }}>{done ? "Cleared" : "+30 XP"}</span>
-                    <span style={{ color: "var(--ac)", minWidth: 52, textAlign: "right" }}>{open ? "Close" : "Open"}</span>
+                    <span style={{ padding: "4px 10px", background: done ? "var(--ac)" : "var(--card2)", color: done ? "var(--on-ac)" : "var(--ink)" }}>{done ? "Cleared" : "+30 XP"}</span>
+                    <span style={{ color: "var(--act)", minWidth: 52, textAlign: "right" }}>{open ? "Close" : "Open"}</span>
                   </span>
                 </button>
                 {open && (
@@ -290,7 +392,7 @@ export default function Portfolio({ repos }: { repos: Repo[] }) {
 
       {/* SKILLS */}
       <section style={{ position: "relative", background: "var(--bg2)", borderTop: "2px solid var(--line)", borderBottom: "2px solid var(--line)" }}>
-        <div className="wrap" style={{ paddingTop: 96, paddingBottom: 96 }}>
+        <div className="wrap s-top s-bot">
           <div className="sec-head">
             <h2 className="pixel sec">Skill tree</h2>
             <p>Click a skill to level it up. Each level: +15 XP, three levels max.</p>
@@ -305,7 +407,7 @@ export default function Portfolio({ repos }: { repos: Repo[] }) {
                   style={{ border: `2px solid ${lv === 3 ? "var(--ac)" : "var(--line)"}` }}>
                   <span style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 12 }}>
                     <span className="pixel" style={{ fontSize: 24, lineHeight: 1.1 }}>{sk.name}</span>
-                    <span style={{ fontSize: 13, fontWeight: 600, letterSpacing: ".08em", color: lv === 3 ? "var(--ac)" : "var(--mute)" }}>{lv === 3 ? "MAX" : `LV ${lv}/3`}</span>
+                    <span style={{ fontSize: 13, fontWeight: 600, letterSpacing: ".08em", color: lv === 3 ? "var(--act)" : "var(--mute)" }}>{lv === 3 ? "MAX" : `LV ${lv}/3`}</span>
                   </span>
                   <span style={{ display: "flex", gap: 6 }}>
                     {[0, 1, 2].map((n) => (
@@ -321,10 +423,10 @@ export default function Portfolio({ repos }: { repos: Repo[] }) {
       </section>
 
       {/* REPOS */}
-      <section id="loot" className="wrap" style={{ paddingTop: 96, paddingBottom: 0 }}>
+      <section id="loot" className="wrap s-top">
         <div className="sec-head">
           <h2 className="pixel sec">Loot chest</h2>
-          <p>Every public repo on <a href={PROFILE.github} target="_blank" rel="noreferrer" style={{ color: "var(--ac)" }}>github.com/{PROFILE.githubUser}</a>.</p>
+          <p>Every public repo on <a href={PROFILE.github} target="_blank" rel="noreferrer" style={{ color: "var(--act)" }}>github.com/{PROFILE.githubUser}</a>.</p>
         </div>
         <div className="rv grid3">
           {repos.map((r) => (
@@ -341,7 +443,7 @@ export default function Portfolio({ repos }: { repos: Repo[] }) {
       </section>
 
       {/* BADGES */}
-      <section className="wrap" style={{ paddingTop: 96, paddingBottom: 96 }}>
+      <section className="wrap s-top s-bot">
         <div className="sec-head">
           <h2 className="pixel sec">Badges</h2>
           <p>{badgesDone} of {badges.length} unlocked.</p>
@@ -349,12 +451,12 @@ export default function Portfolio({ repos }: { repos: Repo[] }) {
         <div className="rv grid3" style={{ gridTemplateColumns: "repeat(auto-fit,minmax(min(320px,100%),1fr))" }}>
           {badges.map((b, i) => (
             <div key={b.name} className="badge" style={{ border: `2px solid ${b.done ? "var(--ac)" : "var(--line)"}`, opacity: b.done ? 1 : 0.62, animation: b.done ? "unlock .7s ease-out" : "none" }}>
-              <span className="pixel" style={{ flex: "none", width: 48, height: 48, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24, background: b.done ? "var(--ac)" : "var(--card2)", color: b.done ? "var(--bg)" : "var(--mute)" }}>
+              <span className="pixel" style={{ flex: "none", width: 48, height: 48, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24, background: b.done ? "var(--ac)" : "var(--card2)", color: b.done ? "var(--on-ac)" : "var(--mute)" }}>
                 {b.done ? "✓" : i + 1}
               </span>
               <span style={{ display: "flex", flexDirection: "column", gap: 4 }}>
                 <span className="pixel" style={{ fontSize: 22, lineHeight: 1.15 }}>{b.name}</span>
-                <span style={{ fontSize: 14, color: "var(--ink2)", textWrap: "pretty" }}>{b.done ? b.desc : `Locked. ${b.desc}`}</span>
+                <span style={{ fontSize: 14, color: "var(--ink2)", textWrap: "pretty" }}>{b.done ? b.desc : `Locked. ${"hint" in b && b.hint ? b.hint : b.desc}`}</span>
               </span>
             </div>
           ))}
@@ -362,7 +464,7 @@ export default function Portfolio({ repos }: { repos: Repo[] }) {
       </section>
 
       {/* CONTACT */}
-      <section className="wrap" style={{ paddingBottom: 96 }}>
+      <section className="wrap s-bot">
         <div className="final tilt">
           <p style={{ margin: 0, fontSize: 14, fontWeight: 600, letterSpacing: ".14em", textTransform: "uppercase" }}>Final stage</p>
           <h2 className="pixel">Want to team up?</h2>
@@ -370,8 +472,8 @@ export default function Portfolio({ repos }: { repos: Repo[] }) {
             I&apos;m looking for software engineering roles and projects worth building well. Send an invite and I&apos;ll get back to you.
           </p>
           {badgesDone === badges.length && <p className="open" style={{ margin: 0, fontWeight: 600 }}>Perfect run. You found every badge.</p>}
-          <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "16px 28px" }}>
-            <a className="cta dark" href={`mailto:${PROFILE.email}`}>Send invite</a>
+          <ContactForm email={PROFILE.email} />
+          <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "0 28px" }}>
             <a className="link" style={{ color: "inherit" }} href={PROFILE.github} target="_blank" rel="noreferrer">GitHub</a>
             {PROFILE.linkedin && <a className="link" style={{ color: "inherit" }} href={PROFILE.linkedin} target="_blank" rel="noreferrer">LinkedIn</a>}
           </div>
@@ -380,7 +482,10 @@ export default function Portfolio({ repos }: { repos: Repo[] }) {
 
       <footer className="wrap" style={{ paddingBottom: 56, display: "flex", flexWrap: "wrap", justifyContent: "space-between", gap: "8px 24px", fontSize: 13, color: "var(--mute)" }}>
         <span>&copy; {new Date().getFullYear()} {PROFILE.name}</span>
-        <span>Refresh the page to play again.</span>
+        <span>
+          Keys: M sound · T theme · A accent ·{" "}
+          <button type="button" className="linkbtn" onClick={() => dispatch({ type: "reset" })}>Reset progress</button>
+        </span>
       </footer>
     </div>
   );
@@ -389,7 +494,7 @@ export default function Portfolio({ repos }: { repos: Repo[] }) {
 function Boot() {
   return (
     <div className="boot" aria-hidden>
-      <div style={{ width: "min(520px,86%)", color: "var(--ac)", display: "flex", flexDirection: "column", gap: 10 }}>
+      <div style={{ width: "min(520px,86%)", color: "var(--act)", display: "flex", flexDirection: "column", gap: 10 }}>
         <div className="type" style={{ "--w": "22ch", animationDelay: ".1s" } as CSSProperties}>&gt; booting portfolio.exe</div>
         <div className="type" style={{ "--w": "25ch", animationDelay: ".8s" } as CSSProperties}>&gt; loading quests ... OK</div>
         <div className="type" style={{ "--w": "28ch", animationDelay: "1.5s" } as CSSProperties}>&gt; spawning player 1 ... OK</div>
@@ -405,7 +510,7 @@ function Backdrop() {
       <div aria-hidden style={{ position: "absolute", left: 0, right: 0, top: 0, height: 900, overflow: "hidden", pointerEvents: "none" }}>
         <div className="floor" />
       </div>
-      <div aria-hidden style={{ position: "absolute", left: 0, right: 0, top: 0, height: 900, overflow: "hidden", pointerEvents: "none", perspective: 900, perspectiveOrigin: "var(--pox) var(--poy)" }}>
+      <div aria-hidden className="tunnel" style={{ position: "absolute", left: 0, right: 0, top: 0, height: 900, overflow: "hidden", pointerEvents: "none", perspective: 900, perspectiveOrigin: "var(--pox) var(--poy)" }}>
         <div style={{ position: "absolute", left: "50%", top: "50%", width: 0, height: 0, transformStyle: "preserve-3d", animation: "fly 3s linear infinite" }}>
           {Array.from({ length: 9 }, (_, i) => (
             <div key={i} style={{ position: "absolute", left: -380, top: -380, width: 760, height: 760, transform: `translateZ(${-i * 160}px)` }}>
