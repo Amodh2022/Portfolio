@@ -9,9 +9,9 @@ import { ACCENTS, useSettings } from "./useSettings";
 const MAX_XP = 200;
 const TITLES = ["Rookie", "Apprentice", "Journeyman", "Specialist", "Veteran", "Legend"];
 const COIN_DEFS = [
-  { id: "c1", left: "4%", top: "64%" },
-  { id: "c2", left: "47%", top: "8%" },
-  { id: "c3", left: "91%", top: "70%" },
+  { id: "c1", left: "46%", top: "60%" },
+  { id: "c2", left: "47%", top: "6%" },
+  { id: "c3", left: "93%", top: "5%" },
 ];
 const MOTES = [
   { left: "8%", top: 520, coral: false, delay: 0 },
@@ -245,7 +245,7 @@ export default function Portfolio({ repos }: { repos: Repo[] }) {
             Player 1 ready<span className="cursor"> _</span>
           </p>
           <div className="sway">
-            <h1 className="pixel rise d1">Hi, I&apos;m <span className="glitch">{PROFILE.name}</span>.</h1>
+            <h1 className="pixel rise d1">Hi, I&apos;m <span className="glitch">{PROFILE.name}.</span></h1>
           </div>
           <p className="rise d2" style={{ margin: 0, fontSize: 18, maxWidth: 520, color: "var(--ink2)", textWrap: "pretty" }}>
             {PROFILE.role} with 3.5+ years shipping Flutter apps to the Play Store and App Store, now building AI tooling for developers. This page is a game: open quests, level up skills, and unlock every badge. Everything you touch earns XP.
