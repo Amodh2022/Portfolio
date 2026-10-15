@@ -1,15 +1,18 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useEffect, useReducer, useRef, useState, type CSSProperties, type MouseEvent } from "react";
-import { AI_LAB, EXPERIENCE, ORBIT, ORBIT_AI, PROFILE, QUESTS, SKILLS, type Repo } from "@/lib/data";
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState, type CSSProperties, type MouseEvent } from "react";
+import { AI_LAB, EXPERIENCE, ORBIT, ORBIT_AI, PROFILE, QUESTS, SKILLS, type Repo, type Role } from "@/lib/data";
 import { emitBurst, lastPointer } from "@/lib/fx";
-import { play } from "@/lib/sound";
+import { play, type Sfx } from "@/lib/sound";
 import ContactForm from "./ContactForm";
 import { useGfx } from "./three/useGfx";
+import type { MapStage } from "./three/WorldMap";
 import { ACCENTS, useSettings } from "./useSettings";
 
 const PlayerSprite = dynamic(() => import("./three/PlayerSprite"), { ssr: false, loading: () => <div className="stage3d" aria-hidden /> });
+const WorldMap = dynamic(() => import("./three/WorldMap"), { ssr: false, loading: () => <div className="map3d" aria-hidden /> });
+const BossFight = dynamic(() => import("./three/BossFight"), { ssr: false, loading: () => <div className="arena" aria-hidden /> });
 const ParticleLayer = dynamic(() => import("./three/ParticleLayer"), { ssr: false });
 
 function burstColors() {
@@ -42,19 +45,21 @@ const levelOf = (xp: number) => Math.min(6, Math.floor(xp / 40) + 1);
 
 type State = {
   xp: number; cleared: Record<string, true>; active: string | null; skills: Record<string, number>;
-  hits: number; coins: Record<string, true>; secret: boolean; gain: number; gainN: number; lvlN: number; lvlTo: number;
+  hits: number; coins: Record<string, true>; secret: boolean; visited: Record<string, true>; boss: boolean; best: number; gain: number; gainN: number; lvlN: number; lvlTo: number;
 };
-type Saved = Pick<State, "xp" | "cleared" | "skills" | "hits" | "coins" | "secret">;
+type Saved = Pick<State, "xp" | "cleared" | "skills" | "hits" | "coins" | "secret" | "visited" | "boss" | "best">;
 type Action =
   | { type: "quest"; id: string }
   | { type: "skill"; id: string }
   | { type: "coin"; id: string }
   | { type: "poke" }
   | { type: "secret" }
+  | { type: "node"; id: string }
+  | { type: "bossEnd"; won: boolean; score: number }
   | { type: "load"; data: Saved }
   | { type: "reset" };
 
-const initial: State = { xp: 0, cleared: {}, active: null, skills: {}, hits: 0, coins: {}, secret: false, gain: 0, gainN: 0, lvlN: 0, lvlTo: 1 };
+const initial: State = { xp: 0, cleared: {}, active: null, skills: {}, hits: 0, coins: {}, secret: false, visited: {}, boss: false, best: 0, gain: 0, gainN: 0, lvlN: 0, lvlTo: 1 };
 
 function award(s: State, n: number): State {
   const xp = Math.min(MAX_XP, s.xp + n);
@@ -77,6 +82,12 @@ function reducer(s: State, a: Action): State {
       return s.coins[a.id] ? s : award({ ...s, coins: { ...s.coins, [a.id]: true } }, 5);
     case "secret":
       return s.secret ? s : award({ ...s, secret: true }, 20);
+    case "node":
+      return s.visited[a.id] ? s : award({ ...s, visited: { ...s.visited, [a.id]: true } }, 10);
+    case "bossEnd": {
+      const best = Math.max(s.best, a.score);
+      return a.won && !s.boss ? award({ ...s, boss: true, best }, 40) : { ...s, best };
+    }
     case "load":
       return { ...initial, ...a.data };
     case "reset":
@@ -100,6 +111,9 @@ function loadSaved(): Saved | null {
       hits: Math.max(0, Number(raw.hits) || 0),
       coins: flags(raw.coins),
       secret: raw.secret === true,
+      visited: flags(raw.visited),
+      boss: raw.boss === true,
+      best: Math.max(0, Math.round(Number(raw.best) || 0)),
     };
   } catch {
     return null;
@@ -113,6 +127,20 @@ export default function Portfolio({ repos }: { repos: Repo[] }) {
   const { settings, toggleSound, toggleTheme, setAccent, cycleAccent } = useSettings();
   const soundOn = settings.sound;
   const gfx = useGfx();
+  const soundRef = useRef(soundOn);
+  useEffect(() => {
+    soundRef.current = soundOn;
+  }, [soundOn]);
+  const sfx = useCallback((k: Sfx, amount?: number) => {
+    if (soundRef.current) play(k, amount);
+  }, []);
+  const onBossEnd = useCallback((won: boolean, score: number) => dispatch({ type: "bossEnd", won, score }), []);
+
+  // world map: the roles oldest-first, then the boss gate
+  const roles = useMemo(() => [...EXPERIENCE].reverse(), []);
+  const [mapTarget, setMapTarget] = useState<number | null>(null);
+  const [mapSel, setMapSel] = useState<number | null>(null);
+  const [mapKey, setMapKey] = useState(0);
   const poke = () => {
     if (soundOn) play("click");
     dispatch({ type: "poke" });
@@ -124,14 +152,24 @@ export default function Portfolio({ repos }: { repos: Repo[] }) {
   // restore saved progress once, after hydration
   useEffect(() => {
     const saved = loadSaved();
-    if (saved) dispatch({ type: "load", data: saved });
+    if (saved) {
+      dispatch({ type: "load", data: saved });
+      let last = -1;
+      roles.forEach((_, i) => {
+        if (saved.visited["e" + i]) last = i;
+      });
+      if (last >= 0) {
+        setMapTarget(last);
+        setMapSel(last);
+      }
+    }
     setSaveReady(true);
-  }, []);
+  }, [roles]);
   useEffect(() => {
     if (!saveReady) return;
-    const { xp, cleared, skills, hits, coins, secret } = s;
+    const { xp, cleared, skills, hits, coins, secret, visited, boss, best } = s;
     try {
-      localStorage.setItem(SAVE_KEY, JSON.stringify({ xp, cleared, skills, hits, coins, secret }));
+      localStorage.setItem(SAVE_KEY, JSON.stringify({ xp, cleared, skills, hits, coins, secret, visited, boss, best }));
     } catch {
       /* storage blocked: progress just won't persist */
     }
@@ -187,9 +225,29 @@ export default function Portfolio({ repos }: { repos: Repo[] }) {
     { name: "Bug Squasher", desc: `Poke the robot five times (${Math.min(s.hits, 5)}/5).`, done: s.hits >= 5 },
     { name: "Coin Collector", desc: "Grab all three coins floating in the hero.", done: Object.keys(s.coins).length >= 3 },
     { name: "Legend", desc: "Reach 200 XP and level 6.", done: s.xp >= MAX_XP },
+    { name: "Explorer", desc: `Visit all ${EXPERIENCE.length} stages on the campaign map.`, done: roles.every((_, i) => s.visited["e" + i]) },
+    { name: "Bug Boss", desc: "Defeat the Legacy Bug in the boss stage.", done: s.boss },
     { name: "Konami Code", desc: "Up, up, down, down, left, right, left, right, B, A.", hint: "Some codes are older than the web.", done: s.secret },
   ];
   const badgesDone = badges.filter((b) => b.done).length;
+
+  const allVisited = roles.every((_, i) => s.visited["e" + i]);
+  const stages: MapStage[] = [
+    ...roles.map((r, i) => ({ id: "e" + i, label: r.short, visited: !!s.visited["e" + i], unlocked: i === 0 || !!s.visited["e" + (i - 1)] })),
+    { id: "boss", label: "BOSS", visited: s.boss, unlocked: allVisited, boss: true },
+  ];
+  const travel = (i: number) => {
+    if (stages[i]?.unlocked) setMapTarget(i);
+  };
+  const arrive = (i: number) => {
+    if (i < roles.length) {
+      dispatch({ type: "node", id: "e" + i });
+      setMapSel(i);
+    } else {
+      document.getElementById("boss")?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  };
+  const nextStage = (mapSel ?? -1) + 1;
 
   const tilt = (e: MouseEvent<HTMLDivElement>) => {
     const card = cardRef.current;
@@ -379,32 +437,33 @@ export default function Portfolio({ repos }: { repos: Repo[] }) {
       <section id="experience" className="wrap" style={{ paddingTop: 0, paddingBottom: 96 }}>
         <div className="sec-head">
           <h2 className="pixel sec">Campaign map</h2>
-          <p>Where I&apos;ve played so far.</p>
+          <p>{gfx.enabled ? "Click a glowing stage to walk there. Each new stage: +10 XP." : "Where I've played so far."}</p>
         </div>
-        <ol className="rv timeline">
-          {EXPERIENCE.map((r, i) => (
+        {gfx.enabled && (
+          <div className="rv">
+            <WorldMap key={mapKey} stages={stages} target={mapTarget} low={gfx.low} onTravel={travel} onArrive={arrive} onStep={() => sfx("step")} />
+            <div className="map-panel">
+              {mapSel === null ? (
+                <p className="map-hint">Your journey starts at <strong>{roles[0].short}</strong>. Click the glowing stage on the map.</p>
+              ) : (
+                <RoleCard r={roles[mapSel]} />
+              )}
+              <div className="map-nav">
+                <button type="button" className="cta dark" disabled={mapSel === null || mapSel === 0} onClick={() => mapSel !== null && setMapTarget(mapSel - 1)} style={{ border: 0, cursor: "pointer" }}>
+                  &larr; Previous
+                </button>
+                <button type="button" className="cta" disabled={!stages[nextStage]?.unlocked} onClick={() => travel(nextStage)} style={{ border: 0, cursor: "pointer" }}>
+                  {nextStage >= roles.length ? "To the boss" : "Next stage"} &rarr;
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+        <ol className={`rv timeline${gfx.enabled ? " sr-only" : ""}`}>
+          {[...roles].reverse().map((r, i) => (
             <li key={r.org + r.period} className="stage">
               <span className="node pixel" aria-hidden>{String(i + 1).padStart(2, "0")}</span>
-              <article className="quest tilt" style={{ padding: "24px 28px", display: "grid", gap: 18 }}>
-                <header style={{ display: "flex", flexWrap: "wrap", alignItems: "baseline", justifyContent: "space-between", gap: "4px 24px" }}>
-                  <div>
-                    <h3 className="pixel" style={{ margin: 0, fontSize: 28, lineHeight: 1.15 }}>{r.title}</h3>
-                    <p style={{ margin: 0, color: "var(--act)", fontWeight: 600 }}>{r.org}</p>
-                  </div>
-                  <span className="eyebrow">{r.period}</span>
-                </header>
-                <p style={{ margin: 0, color: "var(--ink2)", textWrap: "pretty" }}>{r.summary}</p>
-                {r.highlights && (
-                  <ul className="loot">
-                    {r.highlights.map((h) => <li key={h}>{h}</li>)}
-                  </ul>
-                )}
-                {r.stack && (
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
-                    {r.stack.map((t) => <span key={t} className="chipx">{t}</span>)}
-                  </div>
-                )}
-              </article>
+              <RoleCard r={r} />
             </li>
           ))}
         </ol>
@@ -480,6 +539,24 @@ export default function Portfolio({ repos }: { repos: Repo[] }) {
         </div>
       </section>
 
+      {/* BOSS */}
+      <section id="boss" className="wrap s-top">
+        <div className="sec-head">
+          <h2 className="pixel sec">Boss stage</h2>
+          <p>Squash bugs, protect the server, then beat the Legacy Bug. Win: +40 XP and a badge.</p>
+        </div>
+        <div className="rv">
+          {gfx.enabled ? (
+            <>
+              <BossFight low={gfx.low} best={s.best} onSfx={sfx} onEnd={onBossEnd} />
+              <p className="arena-note">Click or tap the bugs. Keyboard: <kbd>Space</kbd> squashes the bug nearest the server. Don&apos;t let them reach it.</p>
+            </>
+          ) : (
+            <p className="arena-note">The boss fight needs WebGL and motion enabled. It is switched off for visitors who prefer reduced motion.</p>
+          )}
+        </div>
+      </section>
+
       {/* BADGES */}
       <section className="wrap s-top s-bot">
         <div className="sec-head">
@@ -522,10 +599,40 @@ export default function Portfolio({ repos }: { repos: Repo[] }) {
         <span>&copy; {new Date().getFullYear()} {PROFILE.name}</span>
         <span>
           Keys: M sound · T theme · A accent ·{" "}
-          <button type="button" className="linkbtn" onClick={() => dispatch({ type: "reset" })}>Reset progress</button>
+          <button type="button" className="linkbtn" onClick={() => {
+            dispatch({ type: "reset" });
+            setMapTarget(null);
+            setMapSel(null);
+            setMapKey((k) => k + 1);
+          }}>Reset progress</button>
         </span>
       </footer>
     </div>
+  );
+}
+
+function RoleCard({ r }: { r: Role }) {
+  return (
+    <article className="quest tilt" style={{ padding: "24px 28px", display: "grid", gap: 18 }}>
+      <header style={{ display: "flex", flexWrap: "wrap", alignItems: "baseline", justifyContent: "space-between", gap: "4px 24px" }}>
+        <div>
+          <h3 className="pixel" style={{ margin: 0, fontSize: 28, lineHeight: 1.15 }}>{r.title}</h3>
+          <p style={{ margin: 0, color: "var(--act)", fontWeight: 600 }}>{r.org}</p>
+        </div>
+        <span className="eyebrow">{r.period}</span>
+      </header>
+      <p style={{ margin: 0, color: "var(--ink2)", textWrap: "pretty" }}>{r.summary}</p>
+      {r.highlights && (
+        <ul className="loot">
+          {r.highlights.map((h) => <li key={h}>{h}</li>)}
+        </ul>
+      )}
+      {r.stack && (
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
+          {r.stack.map((t) => <span key={t} className="chipx">{t}</span>)}
+        </div>
+      )}
+    </article>
   );
 }
 

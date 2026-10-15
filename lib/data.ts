@@ -71,6 +71,7 @@ export const QUESTS: Quest[] = [
 
 export type Role = {
   org: string;
+  short: string;
   title: string;
   period: string;
   summary: string;
@@ -81,6 +82,7 @@ export type Role = {
 export const EXPERIENCE: Role[] = [
   {
     org: "Meril",
+    short: "Meril",
     title: "SDE-1",
     period: "Sep 2025 - Present",
     summary: "Building the Flutter hospital app used for outpatient and inpatient care, from the appointment queue to the operating theatre.",
@@ -95,18 +97,21 @@ export const EXPERIENCE: Role[] = [
   },
   {
     org: "Miles Education",
+    short: "Miles",
     title: "Flutter Developer",
     period: "Mar 2025 - Aug 2025",
     summary: "Flutter developer on production mobile apps for Android and iOS.",
   },
   {
     org: "Agathsya Technologies Pvt Ltd",
+    short: "Agathsya",
     title: "Associate Software Engineer",
     period: "Feb 2024 - Feb 2025",
     summary: "Started my career building Flutter apps, taking them from first commit to Play Store and App Store release.",
   },
   {
     org: "Dimension64 Consulting Private Limited",
+    short: "Dimension64",
     title: "Software Developer",
     period: "Mar 2023 - Feb 2024",
     summary: "My first role as a software developer, in Bengaluru.",

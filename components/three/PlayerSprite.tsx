@@ -6,6 +6,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import { ORBIT, ORBIT_AI } from "@/lib/data";
 import GameCanvas from "./GameCanvas";
+import { labelTexture, usePixelFont } from "./textures";
 import { useThemeColors, type Palette } from "./useThemeColors";
 
 const HOP_MS = 950;
@@ -26,26 +27,6 @@ function hopAt(u: number) {
     }
   }
   return { y: 0, sx: 1, sy: 1 };
-}
-
-function labelTexture(label: string, bg: string, fg: string, border: string, family: string) {
-  const c = document.createElement("canvas");
-  c.width = 256;
-  c.height = 80;
-  const g = c.getContext("2d")!;
-  g.fillStyle = bg;
-  g.fillRect(4, 4, 248, 72);
-  g.lineWidth = 6;
-  g.strokeStyle = border;
-  g.strokeRect(4, 4, 248, 72);
-  g.fillStyle = fg;
-  g.font = `700 34px ${family}`;
-  g.textAlign = "center";
-  g.textBaseline = "middle";
-  g.fillText(label, 128, 42);
-  const t = new THREE.CanvasTexture(c);
-  t.colorSpace = THREE.SRGBColorSpace;
-  return t;
 }
 
 function Box({ size, pos, color, edge, rot }: { size: [number, number, number]; pos: [number, number, number]; color: string; edge?: string; rot?: [number, number, number] }) {
@@ -144,15 +125,7 @@ function Robot({ p, onPoke, pointer }: { p: Palette; onPoke: () => void; pointer
 
 function Orbit({ p }: { p: Palette }) {
   const spin = useRef<THREE.Group>(null);
-  const [family, setFamily] = useState("monospace");
-  useEffect(() => {
-    const read = () => {
-      const f = getComputedStyle(document.documentElement).getPropertyValue("--font-pixel").trim();
-      if (f) setFamily(f);
-    };
-    read();
-    void document.fonts?.ready.then(read);
-  }, []);
+  const family = usePixelFont();
 
   const textures = useMemo(
     () =>
