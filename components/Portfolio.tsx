@@ -171,7 +171,7 @@ export default function Portfolio({ repos }: { repos: Repo[] }) {
             <h1 className="pixel rise d1">Hi, I&apos;m <span className="glitch">{PROFILE.name}</span>.</h1>
           </div>
           <p className="rise d2" style={{ margin: 0, fontSize: 18, maxWidth: 520, color: "var(--ink2)", textWrap: "pretty" }}>
-            {PROFILE.role} building cross-platform apps, Dart packages and AI tooling. This page is a game: open quests, level up skills, and unlock every badge. Everything you touch earns XP.
+            {PROFILE.role} building mobile and web apps, developer tools and AI-powered products. This page is a game: open quests, level up skills, and unlock every badge. Everything you touch earns XP.
           </p>
           <div className="rise d3" style={{ display: "flex", flexWrap: "wrap", gap: 16 }}>
             <a className="cta" href="#quests">Press start</a>
@@ -367,7 +367,7 @@ export default function Portfolio({ repos }: { repos: Repo[] }) {
           <p style={{ margin: 0, fontSize: 14, fontWeight: 600, letterSpacing: ".14em", textTransform: "uppercase" }}>Final stage</p>
           <h2 className="pixel">Want to team up?</h2>
           <p style={{ margin: 0, fontSize: 18, maxWidth: 620, textWrap: "pretty" }}>
-            I&apos;m looking for Flutter and full-stack projects worth building well. Send an invite and I&apos;ll get back to you.
+            I&apos;m looking for software engineering roles and projects worth building well. Send an invite and I&apos;ll get back to you.
           </p>
           {badgesDone === badges.length && <p className="open" style={{ margin: 0, fontWeight: 600 }}>Perfect run. You found every badge.</p>}
           <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "16px 28px" }}>

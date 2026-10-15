@@ -1,6 +1,6 @@
 export const PROFILE = {
   name: "Amodh Nadiger",
-  role: "Flutter Developer",
+  role: "Software Engineer",
   city: "Bengaluru",
   github: "https://github.com/Amodh2022",
   githubUser: "Amodh2022",

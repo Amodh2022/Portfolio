@@ -6,7 +6,7 @@ const mono = IBM_Plex_Mono({ subsets: ["latin"], weight: ["400", "500", "600"], 
 const pixel = Pixelify_Sans({ subsets: ["latin"], weight: ["500", "700"], variable: "--font-pixel" });
 
 export const metadata: Metadata = {
-  title: "Amodh Nadiger · Flutter Developer",
+  title: "Amodh Nadiger · Software Engineer",
   description: "Portfolio of Amodh Nadiger. Open quests, level up skills, unlock every badge.",
 };
 
