@@ -105,6 +105,12 @@ export const EXPERIENCE: Role[] = [
     period: "Feb 2024 - Feb 2025",
     summary: "Started my career building Flutter apps, taking them from first commit to Play Store and App Store release.",
   },
+  {
+    org: "Dimension64 Consulting Private Limited",
+    title: "Software Developer",
+    period: "Mar 2023 - Feb 2024",
+    summary: "My first role as a software developer, in Bengaluru.",
+  },
 ];
 
 export const SKILLS: { name: string; note: string }[] = [
@@ -118,8 +124,9 @@ export const SKILLS: { name: string; note: string }[] = [
 
 export type Repo = { name: string; description: string | null; language: string | null; url: string; stars: number };
 
+/** Interview take-home assignments aren't portfolio projects. */
+export const isAssignment = (name: string) => /assignment|^paywize_task/i.test(name);
+
 export const FALLBACK_REPOS: Repo[] = [
-  "fitgrid", "group_court_room", "local_first_sync", "flutter-bridge-mcp", "askaide", "ostrum_assignment",
-  "3f-assignment", "nowAppsAssignment", "atria_assignment", "Portfolio", "paywize_task_2", "paywize_task_1",
-  "tasker", "news_app",
+  "fitgrid", "group_court_room", "local_first_sync", "flutter-bridge-mcp", "askaide", "Portfolio", "tasker", "news_app",
 ].map((name) => ({ name, description: null, language: null, url: `https://github.com/Amodh2022/${name}`, stars: 0 }));

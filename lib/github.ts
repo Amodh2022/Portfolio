@@ -1,4 +1,4 @@
-import { FALLBACK_REPOS, PROFILE, type Repo } from "./data";
+import { FALLBACK_REPOS, PROFILE, isAssignment, type Repo } from "./data";
 
 export async function getRepos(): Promise<Repo[]> {
   try {
@@ -12,7 +12,7 @@ export async function getRepos(): Promise<Repo[]> {
       html_url: string; stargazers_count: number; fork: boolean;
     }>;
     const repos = data
-      .filter((r) => !r.fork)
+      .filter((r) => !r.fork && !isAssignment(r.name))
       .map((r) => ({ name: r.name, description: r.description, language: r.language, url: r.html_url, stars: r.stargazers_count }));
     return repos.length ? repos : FALLBACK_REPOS;
   } catch {
