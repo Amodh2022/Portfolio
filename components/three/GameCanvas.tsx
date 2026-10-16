@@ -12,7 +12,7 @@ type Props = {
   onLost?: () => void;
 };
 
-/** R3F canvas that only renders while it is on screen, with a capped pixel ratio and no antialiasing (pixel look). */
+/** R3F canvas that only renders while it is on screen, with a capped (but retina-sharp) pixel ratio and antialiasing. */
 export default function GameCanvas({ children, low = false, className, style, camera, onLost }: Props) {
   const ref = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(false);
@@ -29,8 +29,8 @@ export default function GameCanvas({ children, low = false, className, style, ca
     <div ref={ref} className={className} style={style}>
       <Canvas
         frameloop={visible ? "always" : "never"}
-        dpr={low ? 1 : [1, 1.5]}
-        gl={{ antialias: false, alpha: true, powerPreference: "high-performance" }}
+        dpr={low ? [1, 1.5] : [1, 2]}
+        gl={{ antialias: true, alpha: true, powerPreference: "high-performance" }}
         camera={camera}
         onCreated={({ gl }) => {
           gl.domElement.addEventListener("webglcontextlost", (e) => {

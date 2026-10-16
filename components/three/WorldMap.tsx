@@ -172,9 +172,9 @@ function Node({ i, n, stage, p, family, onTravel }: { i: number; n: number; stag
   const plate = useMemo(() => new THREE.Color(baseColor).lerp(new THREE.Color(p.ink), 0.4), [baseColor, p.ink]);
 
   const tex = useMemo(() => {
-    if (state === "locked") return labelTexture("LOCKED", p.card2, p.ink, p.line, family, 256, 72);
-    if (state === "open") return labelTexture(stage.label, p.coral, "#0F1020", p.ink, family, 320, 80);
-    return labelTexture(stage.label, p.ac, "#0F1020", p.ink, family, 320, 80);
+    if (state === "locked") return labelTexture("LOCKED", p.card2, p.ink, p.line, family, 512, 144);
+    if (state === "open") return labelTexture(stage.label, p.coral, "#0F1020", p.ink, family, 640, 160);
+    return labelTexture(stage.label, p.ac, "#0F1020", p.ink, family, 640, 160);
   }, [state, stage.label, p, family]);
   useEffect(() => () => tex.dispose(), [tex]);
 

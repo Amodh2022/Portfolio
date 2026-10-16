@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useReducer, useRef, useState, type CSS
 import { AI_LAB, EXPERIENCE, ORBIT, ORBIT_AI, PROFILE, QUESTS, SKILLS, type Repo, type Role } from "@/lib/data";
 import { emitBurst, lastPointer } from "@/lib/fx";
 import { play, type Sfx } from "@/lib/sound";
+import { ARCADE, type ArcadeId } from "@/lib/game/arcade";
 import ContactForm from "./ContactForm";
 import { useGfx } from "./three/useGfx";
 import type { MapStage } from "./three/WorldMap";
@@ -13,6 +14,7 @@ import { ACCENTS, useSettings } from "./useSettings";
 const PlayerSprite = dynamic(() => import("./three/PlayerSprite"), { ssr: false, loading: () => <div className="stage3d" aria-hidden /> });
 const WorldMap = dynamic(() => import("./three/WorldMap"), { ssr: false, loading: () => <div className="map3d" aria-hidden /> });
 const BossFight = dynamic(() => import("./three/BossFight"), { ssr: false, loading: () => <div className="arena" aria-hidden /> });
+const Arcade = dynamic(() => import("./Arcade"), { ssr: false, loading: () => <div className="arena" aria-hidden /> });
 const ParticleLayer = dynamic(() => import("./three/ParticleLayer"), { ssr: false });
 
 function burstColors() {
@@ -45,9 +47,9 @@ const levelOf = (xp: number) => Math.min(6, Math.floor(xp / 40) + 1);
 
 type State = {
   xp: number; cleared: Record<string, true>; active: string | null; skills: Record<string, number>;
-  hits: number; coins: Record<string, true>; secret: boolean; visited: Record<string, true>; boss: boolean; best: number; gain: number; gainN: number; lvlN: number; lvlTo: number;
+  hits: number; coins: Record<string, true>; secret: boolean; visited: Record<string, true>; boss: boolean; best: number; arcade: Record<string, number>; gain: number; gainN: number; lvlN: number; lvlTo: number;
 };
-type Saved = Pick<State, "xp" | "cleared" | "skills" | "hits" | "coins" | "secret" | "visited" | "boss" | "best">;
+type Saved = Pick<State, "xp" | "cleared" | "skills" | "hits" | "coins" | "secret" | "visited" | "boss" | "best" | "arcade">;
 type Action =
   | { type: "quest"; id: string }
   | { type: "skill"; id: string }
@@ -56,10 +58,11 @@ type Action =
   | { type: "secret" }
   | { type: "node"; id: string }
   | { type: "bossEnd"; won: boolean; score: number }
+  | { type: "arcade"; id: ArcadeId; score: number }
   | { type: "load"; data: Saved }
   | { type: "reset" };
 
-const initial: State = { xp: 0, cleared: {}, active: null, skills: {}, hits: 0, coins: {}, secret: false, visited: {}, boss: false, best: 0, gain: 0, gainN: 0, lvlN: 0, lvlTo: 1 };
+const initial: State = { xp: 0, cleared: {}, active: null, skills: {}, hits: 0, coins: {}, secret: false, visited: {}, boss: false, best: 0, arcade: {}, gain: 0, gainN: 0, lvlN: 0, lvlTo: 1 };
 
 function award(s: State, n: number): State {
   const xp = Math.min(MAX_XP, s.xp + n);
@@ -88,6 +91,12 @@ function reducer(s: State, a: Action): State {
       const best = Math.max(s.best, a.score);
       return a.won && !s.boss ? award({ ...s, boss: true, best }, 40) : { ...s, best };
     }
+    case "arcade": {
+      const goal = ARCADE.find((g) => g.id === a.id)?.goal ?? Infinity;
+      const prev = s.arcade[a.id] ?? 0;
+      const next = { ...s, arcade: { ...s.arcade, [a.id]: Math.max(prev, a.score) } };
+      return prev < goal && a.score >= goal ? award(next, 25) : a.score > prev ? next : s;
+    }
     case "load":
       return { ...initial, ...a.data };
     case "reset":
@@ -114,6 +123,7 @@ function loadSaved(): Saved | null {
       visited: flags(raw.visited),
       boss: raw.boss === true,
       best: Math.max(0, Math.round(Number(raw.best) || 0)),
+      arcade: Object.fromEntries(ARCADE.map((g) => [g.id, Math.max(0, Math.round(Number((raw.arcade as Record<string, number> | undefined)?.[g.id]) || 0))])),
     };
   } catch {
     return null;
@@ -134,6 +144,7 @@ export default function Portfolio({ repos }: { repos: Repo[] }) {
   const sfx = useCallback((k: Sfx, amount?: number) => {
     if (soundRef.current) play(k, amount);
   }, []);
+  const onArcade = useCallback((id: ArcadeId, score: number) => dispatch({ type: "arcade", id, score }), []);
   const onBossEnd = useCallback((won: boolean, score: number) => dispatch({ type: "bossEnd", won, score }), []);
 
   // world map: the roles oldest-first, then the boss gate
@@ -167,9 +178,9 @@ export default function Portfolio({ repos }: { repos: Repo[] }) {
   }, [roles]);
   useEffect(() => {
     if (!saveReady) return;
-    const { xp, cleared, skills, hits, coins, secret, visited, boss, best } = s;
+    const { xp, cleared, skills, hits, coins, secret, visited, boss, best, arcade } = s;
     try {
-      localStorage.setItem(SAVE_KEY, JSON.stringify({ xp, cleared, skills, hits, coins, secret, visited, boss, best }));
+      localStorage.setItem(SAVE_KEY, JSON.stringify({ xp, cleared, skills, hits, coins, secret, visited, boss, best, arcade }));
     } catch {
       /* storage blocked: progress just won't persist */
     }
@@ -227,6 +238,7 @@ export default function Portfolio({ repos }: { repos: Repo[] }) {
     { name: "Legend", desc: "Reach 200 XP and level 6.", done: s.xp >= MAX_XP },
     { name: "Explorer", desc: `Visit all ${EXPERIENCE.length} stages on the campaign map.`, done: roles.every((_, i) => s.visited["e" + i]) },
     { name: "Bug Boss", desc: "Defeat the Legacy Bug in the boss stage.", done: s.boss },
+    { name: "Arcade Champ", desc: `Clear all ${ARCADE.length} arcade games.`, done: ARCADE.every((g) => (s.arcade[g.id] ?? 0) >= g.goal) },
     { name: "Konami Code", desc: "Up, up, down, down, left, right, left, right, B, A.", hint: "Some codes are older than the web.", done: s.secret },
   ];
   const badgesDone = badges.filter((b) => b.done).length;
@@ -256,17 +268,17 @@ export default function Portfolio({ repos }: { repos: Repo[] }) {
     if (!r.width || !r.height) return;
     const x = (e.clientX - r.left) / r.width - 0.5;
     const y = (e.clientY - r.top) / r.height - 0.5;
-    const tx = Math.round(-y * 160) / 10;
-    const ty = Math.round(x * 180) / 10;
-    card.style.setProperty("--tx", `${tx}deg`);
-    card.style.setProperty("--ty", `${ty}deg`);
-    card.style.setProperty("--sx", `${Math.round(8 - ty * 0.7)}px`);
-    card.style.setProperty("--sy", `${Math.round(8 + tx * 0.7)}px`);
+    const mx = Math.round(x * 8);
+    const my = Math.round(y * 8);
+    card.style.setProperty("--mx", `${mx}px`);
+    card.style.setProperty("--my", `${my}px`);
+    card.style.setProperty("--sx", `${8 - mx}px`);
+    card.style.setProperty("--sy", `${8 - my}px`);
   };
   const untilt = () => {
     const card = cardRef.current;
     if (!card) return;
-    ["--tx", "--ty", "--sx", "--sy"].forEach((p) => card.style.removeProperty(p));
+    ["--mx", "--my", "--sx", "--sy"].forEach((p) => card.style.removeProperty(p));
   };
 
   return (
@@ -340,7 +352,7 @@ export default function Portfolio({ repos }: { repos: Repo[] }) {
           </div>
         </div>
 
-        <div className="rise d2 cardwrap" style={{ perspective: 1100 }} onMouseMove={tilt} onMouseLeave={untilt}>
+        <div className="rise d2 cardwrap" onMouseMove={tilt} onMouseLeave={untilt}>
           <div className="card" ref={cardRef}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 13, letterSpacing: ".12em", textTransform: "uppercase", color: "var(--mute)" }}>
               <span>Player card</span>
@@ -554,6 +566,17 @@ export default function Portfolio({ repos }: { repos: Repo[] }) {
           ) : (
             <p className="arena-note">The boss fight needs WebGL and motion enabled. It is switched off for visitors who prefer reduced motion.</p>
           )}
+        </div>
+      </section>
+
+      {/* ARCADE */}
+      <section id="arcade" className="wrap s-top">
+        <div className="sec-head">
+          <h2 className="pixel sec">Arcade</h2>
+          <p>Three mini games. Beat each goal score for +25 XP and the Arcade Champ badge.</p>
+        </div>
+        <div className="rv">
+          <Arcade best={s.arcade} onSfx={sfx} onEnd={onArcade} />
         </div>
       </section>
 
